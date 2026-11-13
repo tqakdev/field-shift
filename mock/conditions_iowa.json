@@ -1,0 +1,52 @@
+{
+  "field_id": "iowa",
+  "name": "Central Iowa (demo)",
+  "country": "USA",
+  "climate_label": "Humid continental — maize / soybean",
+  "polygon": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [-93.62, 41.99],
+        [-93.58, 41.99],
+        [-93.58, 42.02],
+        [-93.62, 42.02],
+        [-93.62, 41.99]
+      ]
+    ]
+  },
+  "monthly_profile": [
+    { "month": 1, "ndvi": 0.1, "soil_moisture": 0.3, "rain_mm": 20, "water_balance_mm": -10, "temperature_c": -5 },
+    { "month": 2, "ndvi": 0.1, "soil_moisture": 0.3, "rain_mm": 20, "water_balance_mm": -10, "temperature_c": -2 },
+    { "month": 3, "ndvi": 0.2, "soil_moisture": 0.4, "rain_mm": 40, "water_balance_mm": 0, "temperature_c": 5 },
+    { "month": 4, "ndvi": 0.3, "soil_moisture": 0.4, "rain_mm": 60, "water_balance_mm": 10, "temperature_c": 10 },
+    { "month": 5, "ndvi": 0.5, "soil_moisture": 0.4, "rain_mm": 80, "water_balance_mm": 20, "temperature_c": 15 },
+    { "month": 6, "ndvi": 0.7, "soil_moisture": 0.3, "rain_mm": 100, "water_balance_mm": 10, "temperature_c": 20 },
+    { "month": 7, "ndvi": 0.8, "soil_moisture": 0.3, "rain_mm": 80, "water_balance_mm": -20, "temperature_c": 25 },
+    { "month": 8, "ndvi": 0.7, "soil_moisture": 0.2, "rain_mm": 80, "water_balance_mm": -20, "temperature_c": 25 },
+    { "month": 9, "ndvi": 0.5, "soil_moisture": 0.3, "rain_mm": 60, "water_balance_mm": 0, "temperature_c": 20 },
+    { "month": 10, "ndvi": 0.3, "soil_moisture": 0.3, "rain_mm": 40, "water_balance_mm": 0, "temperature_c": 10 },
+    { "month": 11, "ndvi": 0.1, "soil_moisture": 0.3, "rain_mm": 40, "water_balance_mm": 10, "temperature_c": 5 },
+    { "month": 12, "ndvi": 0.1, "soil_moisture": 0.3, "rain_mm": 20, "water_balance_mm": 0, "temperature_c": -2 }
+  ],
+  "features": {
+    "bare_months": [11, 12, 1, 2, 3],
+    "bare_months_label": "MOCK: Nov–Mar bare in 10 of 10 years",
+    "stress_months": [7, 8],
+    "stress_months_label": "MOCK: Jul–Aug stress in 5 of 10 years",
+    "frost_window_label": "MOCK: last frost ~15 Apr, first frost ~15 Oct",
+    "frost_free_days": 180,
+    "gdd_annual": 3000,
+    "heat_days_trend": "MOCK: +2 heat days / decade",
+    "rain_annual_mm": 800,
+    "rain_cv": 0.2,
+    "slope_pct_mean": 2,
+    "erosion_risk": 0.3,
+    "water_deficit_annual_mm": 100,
+    "data_coverage_note": "MOCK placeholder — not real NASA reductions"
+  },
+  "timelapse_url": null,
+  "sources_used": ["MOCK", "Sentinel-2 NDVI", "SMAP", "IMERG", "ERA5-Land", "NASA POWER"],
+  "us_module": null,
+  "cross_checks": null
+}

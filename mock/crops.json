@@ -1,0 +1,22 @@
+[
+  { "id": "maize", "name": "Maize / corn", "type": "cash", "family": "poaceae", "season": "warm" },
+  { "id": "soybean", "name": "Soybean", "type": "cash", "family": "fabaceae", "season": "warm" },
+  { "id": "winter_wheat", "name": "Winter wheat", "type": "cash", "family": "poaceae", "season": "cool" },
+  { "id": "spring_wheat", "name": "Spring wheat", "type": "cash", "family": "poaceae", "season": "cool" },
+  { "id": "barley", "name": "Barley", "type": "cash", "family": "poaceae", "season": "cool" },
+  { "id": "oats", "name": "Oats", "type": "cash", "family": "poaceae", "season": "cool" },
+  { "id": "sorghum", "name": "Sorghum", "type": "cash", "family": "poaceae", "season": "warm" },
+  { "id": "millet", "name": "Millet", "type": "cash", "family": "poaceae", "season": "warm" },
+  { "id": "alfalfa", "name": "Alfalfa", "type": "forage", "family": "fabaceae", "season": "cool" },
+  { "id": "red_clover", "name": "Red clover", "type": "forage", "family": "fabaceae", "season": "cool" },
+  { "id": "field_pea", "name": "Field pea", "type": "cash", "family": "fabaceae", "season": "cool" },
+  { "id": "lentil", "name": "Lentil", "type": "cash", "family": "fabaceae", "season": "cool" },
+  { "id": "chickpea", "name": "Chickpea", "type": "cash", "family": "fabaceae", "season": "cool" },
+  { "id": "canola", "name": "Canola / rapeseed", "type": "cash", "family": "brassicaceae", "season": "cool" },
+  { "id": "sunflower", "name": "Sunflower", "type": "cash", "family": "asteraceae", "season": "warm" },
+  { "id": "cereal_rye_cover", "name": "Cereal rye (cover)", "type": "cover", "family": "poaceae", "season": "cool" },
+  { "id": "hairy_vetch_cover", "name": "Hairy vetch (cover)", "type": "cover", "family": "fabaceae", "season": "cool" },
+  { "id": "radish_cover", "name": "Radish (cover)", "type": "cover", "family": "brassicaceae", "season": "cool" },
+  { "id": "cotton", "name": "Cotton", "type": "cash", "family": "malvaceae", "season": "warm" },
+  { "id": "rice", "name": "Rice", "type": "cash", "family": "poaceae", "season": "warm" }
+]

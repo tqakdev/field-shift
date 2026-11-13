@@ -1,0 +1,103 @@
+{
+  "field_id": "iowa",
+  "strategies": [
+    {
+      "id": "current",
+      "name": "Maize → Soybean (current)",
+      "sequence": [
+        { "crop_id": "maize", "months": "May–Oct" },
+        { "crop_id": "soybean", "months": "May–Oct (alt year)" }
+      ],
+      "scores": {
+        "water": 0.5,
+        "soil_health": 0.5,
+        "erosion": 0.4,
+        "pest_break": 0.5,
+        "climate_fit": 0.8,
+        "income": 0.8,
+        "total": 0.6
+      },
+      "delta_vs_current": { "total": 0.0 },
+      "why": "MOCK: This is the farmer's stated current rotation used as the baseline.",
+      "evidence": [
+        {
+          "text": "MOCK: Field bare Nov–Mar in 10 of 10 years",
+          "source": "MOCK / Sentinel-2 NDVI"
+        }
+      ],
+      "benefits": ["MOCK: Familiar markets and equipment"],
+      "data_gaps": ["MOCK: No real satellite reductions in Phase 1"],
+      "risks_for_local_review": [
+        "MOCK: Check local seed availability and herbicide carryover with an agronomist"
+      ],
+      "confidence": "low"
+    },
+    {
+      "id": "current_plus_cover",
+      "name": "Maize → Soybean + Cereal rye cover",
+      "sequence": [
+        { "crop_id": "maize", "months": "May–Oct" },
+        { "crop_id": "cereal_rye_cover", "months": "Oct–Apr" },
+        { "crop_id": "soybean", "months": "May–Oct" }
+      ],
+      "scores": {
+        "water": 0.6,
+        "soil_health": 0.8,
+        "erosion": 0.9,
+        "pest_break": 0.6,
+        "climate_fit": 0.8,
+        "income": 0.7,
+        "total": 0.7
+      },
+      "delta_vs_current": { "total": 0.1 },
+      "why": "MOCK: Cover crop fills the long bare window and protects soil over winter.",
+      "evidence": [
+        {
+          "text": "MOCK: Bare window Nov–Mar (round placeholder)",
+          "source": "MOCK / Sentinel-2 NDVI"
+        }
+      ],
+      "benefits": [
+        "MOCK: Fewer bare months",
+        "MOCK: Higher residue / organic matter score"
+      ],
+      "data_gaps": ["MOCK: Termination timing and herbicide interactions not modeled"],
+      "risks_for_local_review": [
+        "MOCK: Confirm cereal rye fits your planter schedule and herbicide program"
+      ],
+      "confidence": "low"
+    },
+    {
+      "id": "legume_swap",
+      "name": "Maize → Field pea → Soybean",
+      "sequence": [
+        { "crop_id": "maize", "months": "May–Oct" },
+        { "crop_id": "field_pea", "months": "Apr–Jul" },
+        { "crop_id": "soybean", "months": "May–Oct" }
+      ],
+      "scores": {
+        "water": 0.6,
+        "soil_health": 0.7,
+        "erosion": 0.6,
+        "pest_break": 0.8,
+        "climate_fit": 0.7,
+        "income": 0.6,
+        "total": 0.7
+      },
+      "delta_vs_current": { "total": 0.1 },
+      "why": "MOCK: Adding a cool-season legume diversifies families and adds nitrogen fixation.",
+      "evidence": [
+        {
+          "text": "MOCK: Two fabaceae + one poaceae families in rotation",
+          "source": "MOCK / crop knowledge base"
+        }
+      ],
+      "benefits": ["MOCK: Pest-break diversity", "MOCK: Nitrogen-fixing year"],
+      "data_gaps": ["MOCK: Local pea market demand not verified"],
+      "risks_for_local_review": [
+        "MOCK: Check local markets and disease history for peas"
+      ],
+      "confidence": "low"
+    }
+  ]
+}

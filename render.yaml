@@ -1,0 +1,17 @@
+# Render Blueprint — single Streamlit service (no FastAPI).
+services:
+  - type: web
+    name: field-shift
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: streamlit run app.py --server.port=$PORT --server.address=0.0.0.0
+    envVars:
+      - key: EE_SERVICE_ACCOUNT
+        sync: false
+      - key: EE_PRIVATE_KEY_JSON
+        sync: false
+      - key: EE_PROJECT
+        sync: false
+      - key: PYTHON_VERSION
+        value: "3.12.8"

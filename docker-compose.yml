@@ -1,0 +1,10 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    volumes:
+      - ./fieldshift/cache:/app/fieldshift/cache
+      - ./secrets:/app/secrets:ro

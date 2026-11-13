@@ -1,0 +1,37 @@
+[
+  {
+    "purpose": "NDVI / bare soil",
+    "name": "Sentinel-2 SR",
+    "id_or_access": "COPERNICUS/S2_SR_HARMONIZED",
+    "resolution": "10 m",
+    "link": "https://developers.google.com/earth-engine/datasets/catalog/COPERNICUS_S2_SR_HARMONIZED"
+  },
+  {
+    "purpose": "Soil moisture",
+    "name": "SMAP L4",
+    "id_or_access": "NASA/SMAP/SPL4SMGP/008",
+    "resolution": "~11 km",
+    "link": "https://developers.google.com/earth-engine/datasets/catalog/NASA_SMAP_SPL4SMGP_008"
+  },
+  {
+    "purpose": "Precipitation",
+    "name": "GPM IMERG V07 monthly",
+    "id_or_access": "NASA/GPM_L3/IMERG_MONTHLY_V07",
+    "resolution": "~11 km",
+    "link": "https://developers.google.com/earth-engine/datasets/catalog/NASA_GPM_L3_IMERG_MONTHLY_V07"
+  },
+  {
+    "purpose": "ET / temperature / water balance",
+    "name": "ERA5-Land monthly",
+    "id_or_access": "ECMWF/ERA5_LAND/MONTHLY_AGGR",
+    "resolution": "~11 km",
+    "link": "https://developers.google.com/earth-engine/datasets/catalog/ECMWF_ERA5_LAND_MONTHLY_AGGR"
+  },
+  {
+    "purpose": "Daily weather (frost, heat, GDD)",
+    "name": "NASA POWER",
+    "id_or_access": "https://power.larc.nasa.gov/api/temporal/daily/point",
+    "resolution": "~0.5°",
+    "link": "https://power.larc.nasa.gov/"
+  }
+]

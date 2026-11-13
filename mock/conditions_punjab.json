@@ -1,0 +1,52 @@
+{
+  "field_id": "punjab",
+  "name": "Punjab (demo)",
+  "country": "India",
+  "climate_label": "Irrigated subtropical — rice / wheat",
+  "polygon": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [75.78, 30.88],
+        [75.82, 30.88],
+        [75.82, 30.91],
+        [75.78, 30.91],
+        [75.78, 30.88]
+      ]
+    ]
+  },
+  "monthly_profile": [
+    { "month": 1, "ndvi": 0.5, "soil_moisture": 0.3, "rain_mm": 20, "water_balance_mm": -20, "temperature_c": 10 },
+    { "month": 2, "ndvi": 0.6, "soil_moisture": 0.3, "rain_mm": 20, "water_balance_mm": -20, "temperature_c": 14 },
+    { "month": 3, "ndvi": 0.5, "soil_moisture": 0.2, "rain_mm": 20, "water_balance_mm": -40, "temperature_c": 20 },
+    { "month": 4, "ndvi": 0.3, "soil_moisture": 0.2, "rain_mm": 20, "water_balance_mm": -60, "temperature_c": 28 },
+    { "month": 5, "ndvi": 0.2, "soil_moisture": 0.2, "rain_mm": 20, "water_balance_mm": -80, "temperature_c": 32 },
+    { "month": 6, "ndvi": 0.4, "soil_moisture": 0.3, "rain_mm": 80, "water_balance_mm": -20, "temperature_c": 34 },
+    { "month": 7, "ndvi": 0.7, "soil_moisture": 0.4, "rain_mm": 150, "water_balance_mm": 40, "temperature_c": 32 },
+    { "month": 8, "ndvi": 0.8, "soil_moisture": 0.4, "rain_mm": 150, "water_balance_mm": 40, "temperature_c": 30 },
+    { "month": 9, "ndvi": 0.7, "soil_moisture": 0.3, "rain_mm": 80, "water_balance_mm": 0, "temperature_c": 28 },
+    { "month": 10, "ndvi": 0.4, "soil_moisture": 0.3, "rain_mm": 20, "water_balance_mm": -20, "temperature_c": 24 },
+    { "month": 11, "ndvi": 0.4, "soil_moisture": 0.3, "rain_mm": 10, "water_balance_mm": -20, "temperature_c": 16 },
+    { "month": 12, "ndvi": 0.5, "soil_moisture": 0.3, "rain_mm": 10, "water_balance_mm": -20, "temperature_c": 12 }
+  ],
+  "features": {
+    "bare_months": [4, 5],
+    "bare_months_label": "MOCK: Apr–May bare in 6 of 10 years",
+    "stress_months": [5, 6],
+    "stress_months_label": "MOCK: May–Jun heat stress in 8 of 10 years",
+    "frost_window_label": "MOCK: rare frost; frost-free ~350 days",
+    "frost_free_days": 350,
+    "gdd_annual": 5000,
+    "heat_days_trend": "MOCK: +6 heat days / decade",
+    "rain_annual_mm": 600,
+    "rain_cv": 0.3,
+    "slope_pct_mean": 1,
+    "erosion_risk": 0.2,
+    "water_deficit_annual_mm": 200,
+    "data_coverage_note": "MOCK placeholder — not real NASA reductions"
+  },
+  "timelapse_url": null,
+  "sources_used": ["MOCK", "Sentinel-2 NDVI", "SMAP", "IMERG", "ERA5-Land", "NASA POWER"],
+  "us_module": null,
+  "cross_checks": null
+}
