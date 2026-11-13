@@ -36,7 +36,8 @@ def test_monthly_aggregation_rules(power_payload: dict) -> None:
     assert jan["PRECTOTCORR"] == pytest.approx(10.0)
     # T2M mean over non-NaN: 1.5, 2.0, 3.0, 4.0 → 2.625
     assert jan["T2M"] == pytest.approx(2.625)
-    assert jan["T2M_MAX"] == pytest.approx(9.0)
-    assert jan["T2M_MIN"] == pytest.approx(-2.0)
+    # Monthly T2M_MAX/MIN are means of daily max/min (not monthly extremes)
+    assert jan["T2M_MAX"] == pytest.approx((5.0 + 6.0 + 7.0 + 8.0 + 9.0) / 5.0)
+    assert jan["T2M_MIN"] == pytest.approx((-2.0 + -1.0 + 0.0 + 1.0 + 2.0) / 5.0)
     feb = monthly.loc[pd.Period("2024-02", freq="M")]
     assert feb["PRECTOTCORR"] == pytest.approx(2.0)

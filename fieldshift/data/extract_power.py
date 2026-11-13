@@ -12,7 +12,8 @@ import httpx
 import pandas as pd
 
 POWER_URL = "https://power.larc.nasa.gov/api/temporal/daily/point"
-POWER_PARAMS = "T2M,T2M_MAX,T2M_MIN,PRECTOTCORR,RH2M,ALLSKY_SFC_SW_DWN"
+# WS2M enables FAO-56 Penman–Monteith when present; otherwise Hargreaves–Samani.
+POWER_PARAMS = "T2M,T2M_MAX,T2M_MIN,PRECTOTCORR,RH2M,ALLSKY_SFC_SW_DWN,WS2M"
 FILL = -999.0
 DEFAULT_TIMEOUT_S = 60.0
 MAX_RETRIES = 3
@@ -63,11 +64,12 @@ def monthly_from_daily(daily: pd.DataFrame) -> pd.DataFrame:
     """Aggregate daily POWER series to calendar-month values.
 
     - PRECTOTCORR: sum (mm/month)
-    - T2M: mean (°C)
-    - T2M_MAX: max (°C)
-    - T2M_MIN: min (°C)
+    - T2M: mean of daily means (°C)
+    - T2M_MAX: mean of daily maxima (°C) — not the monthly extreme
+    - T2M_MIN: mean of daily minima (°C) — frost still uses daily T2M_MIN
     - RH2M: mean (%)
     - ALLSKY_SFC_SW_DWN: mean (MJ/m²/day)
+    - WS2M: mean (m/s) when present
 
     Returns
     -------
@@ -88,13 +90,15 @@ def monthly_from_daily(daily: pd.DataFrame) -> pd.DataFrame:
     if "T2M" in work.columns:
         aggs["T2M"] = "mean"
     if "T2M_MAX" in work.columns:
-        aggs["T2M_MAX"] = "max"
+        aggs["T2M_MAX"] = "mean"
     if "T2M_MIN" in work.columns:
-        aggs["T2M_MIN"] = "min"
+        aggs["T2M_MIN"] = "mean"
     if "RH2M" in work.columns:
         aggs["RH2M"] = "mean"
     if "ALLSKY_SFC_SW_DWN" in work.columns:
         aggs["ALLSKY_SFC_SW_DWN"] = "mean"
+    if "WS2M" in work.columns:
+        aggs["WS2M"] = "mean"
 
     monthly = work.resample("MS").agg(aggs)
     monthly.index = monthly.index.to_period("M")

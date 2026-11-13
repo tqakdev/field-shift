@@ -64,16 +64,27 @@ def test_harmonize_schema_and_climatology() -> None:
         {"T2M": [1.0, 2.0]},
         index=pd.PeriodIndex(["2023-01", "2023-02"], freq="M"),
     )
-    tidy, clim = harmonize(ee_tables, power_monthly)
+    et0 = pd.Series(
+        [25.0, 20.0, 30.0],
+        index=pd.PeriodIndex(["2023-01", "2023-02", "2024-01"], freq="M"),
+    )
+    tidy, clim, meta = harmonize(
+        ee_tables, power_monthly, et0_monthly=et0, et0_method="hargreaves_samani"
+    )
 
     assert list(tidy.columns) == ["month", "variable", "value", "unit", "source", "n_obs"]
     assert "water_balance_mm" in set(tidy["variable"])
-    # Jan 2023: 40 - abs(-20) = 20
+    assert "rain_best_mm" in set(tidy["variable"])
+    assert "et0_mm" in set(tidy["variable"])
+    assert "variable_coverage" in meta
+    # Jan 2023: rain_best 40 − ET0 25 = 15; ERA5 PET stored positive as cross-check
     wb = tidy[(tidy["variable"] == "water_balance_mm") & (tidy["month"] == "2023-01")]
-    assert float(wb["value"].iloc[0]) == pytest.approx(20.0)
+    assert float(wb["value"].iloc[0]) == pytest.approx(15.0)
+    era5 = tidy[(tidy["variable"] == "era5_pet_mm") & (tidy["month"] == "2023-01")]
+    assert float(era5["value"].iloc[0]) == pytest.approx(20.0)
 
     for var in tidy["variable"].unique():
-        if var in VARIABLE_META:
+        if var in VARIABLE_META and var not in {"rain_best_mm", "water_balance_mm"}:
             unit, source = VARIABLE_META[var]
             sub = tidy[tidy["variable"] == var]
             assert (sub["unit"] == unit).all()

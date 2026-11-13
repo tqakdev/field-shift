@@ -78,33 +78,50 @@ def _fc_to_df(info: dict[str, Any], value_keys: list[str]) -> pd.DataFrame:
     return df
 
 
+def collection_last_month(ee: Any, polygon: dict[str, Any], ee_id: str) -> str:
+    """Last image month-start (YYYY-MM-01) for a collection at this field."""
+    geom = _geom(ee, polygon)
+    last = ee.Image(
+        ee.ImageCollection(ee_id).filterBounds(geom).sort("system:time_start", False).first()
+    )
+    # Snap to month start of the image's month
+    return ee.Date(last.date()).format("YYYY-MM-01").getInfo()
+
+
 def analysis_end_date(ee: Any, polygon: dict[str, Any]) -> str:
-    """Latest month-start YYYY-MM-01 supported by key optical/climate collections at this field."""
+    """Freshest complete month from S2 + ERA5 (explicitly excludes IMERG GEE lag).
+
+    IMERG often lags ~1 year on GEE; using it as a global end truncated every series.
+    Each dataset still keeps its own valid range via per-variable metadata.
+    """
     geom = _geom(ee, polygon)
     candidates = []
-    for ee_id, _band in (
-        ("COPERNICUS/S2_SR_HARMONIZED", None),
-        ("NASA/GPM_L3/IMERG_MONTHLY_V07", "precipitation"),
-        ("ECMWF/ERA5_LAND/MONTHLY_AGGR", "total_precipitation_sum"),
+    for ee_id in (
+        "COPERNICUS/S2_SR_HARMONIZED",
+        "ECMWF/ERA5_LAND/MONTHLY_AGGR",
     ):
         col = ee.ImageCollection(ee_id).filterBounds(geom)
         last = ee.Image(col.sort("system:time_start", False).first())
         candidates.append(last.date())
-    # Earliest of the lasts = conservative end; take min date among lasts
+    # Conservative among freshest optical/climate: earlier of the two lasts
     end = ee.Date(candidates[0])
     for d in candidates[1:]:
         end = ee.Date(ee.Algorithms.If(d.millis().lt(end.millis()), d, end))
-    # Snap to month start of previous complete month if mid-month
     return end.advance(-1, "month").format("YYYY-MM-01").getInfo()
 
 
 def analysis_window(
     ee: Any, polygon: dict[str, Any], years: int = ANALYSIS_YEARS
 ) -> tuple[str, str]:
-    """Return (start, end) as YYYY-MM-01 for the last ``years`` complete years of data."""
+    """Return (start, end) as YYYY-MM-01 for the last ``years`` of freshest S2/ERA5 data."""
     end = analysis_end_date(ee, polygon)
     start = ee.Date(end).advance(-years, "year").format("YYYY-MM-01").getInfo()
     return start, end
+
+
+def _cap_end(global_end: str, dataset_last: str) -> str:
+    """Return the earlier of two YYYY-MM-01 strings."""
+    return min(global_end[:10], dataset_last[:10])
 
 
 def _empty_masked(ee: Any, band: str) -> Any:
@@ -488,14 +505,30 @@ def extract_ee_field(
     ee = _require_ee()
     if start is None or end is None:
         start, end = analysis_window(ee, polygon)
+
+    # Cap lagging archives to their own last month (do not shrink S2/ERA5/POWER).
+    imerg_last = collection_last_month(ee, polygon, "NASA/GPM_L3/IMERG_MONTHLY_V07")
+    grace_last = collection_last_month(ee, polygon, "NASA/GRACE/MASS_GRIDS_V04/MASCON_CRI")
+    imerg_end = _cap_end(end, imerg_last)
+    grace_end = _cap_end(end, grace_last)
+
     return {
         "s2": extract_s2_monthly(ee, polygon, start, end),
         "landsat": extract_landsat_monthly(ee, polygon, start, end),
         "modis": extract_modis_monthly(ee, polygon, start, end),
         "smap": extract_smap_monthly(ee, polygon, start, end),
-        "imerg": extract_imerg_monthly(ee, polygon, start, end),
+        "imerg": extract_imerg_monthly(ee, polygon, start, imerg_end),
         "era5": extract_era5_monthly(ee, polygon, start, end),
         "srtm": extract_srtm(ee, polygon),
-        "grace": extract_grace_monthly(ee, polygon, start, end),
-        "_window": pd.DataFrame([{"start": start, "end": end}]),
+        "grace": extract_grace_monthly(ee, polygon, start, grace_end),
+        "_window": pd.DataFrame(
+            [
+                {
+                    "start": start,
+                    "end": end,
+                    "imerg_end": imerg_end,
+                    "grace_end": grace_end,
+                }
+            ]
+        ),
     }
