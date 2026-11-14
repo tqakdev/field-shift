@@ -61,9 +61,9 @@ def field_map(
             polygon,
             name="Field",
             style_function=lambda _: {
-                "color": "#6b7c3c",
-                "weight": 2,
-                "fillOpacity": 0.25,
+                "color": "#3F7D3A",
+                "weight": 3,
+                "fillOpacity": 0.28,
             },
         ).add_to(m)
         m.fit_bounds([[p[1], p[0]] for p in polygon["coordinates"][0]])

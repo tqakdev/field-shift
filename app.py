@@ -11,6 +11,10 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+from ui.theme import inject_theme  # noqa: E402
+
+inject_theme()
+
 home = st.Page("views/home.py", title="Home", icon="🌾", default=True)
 field = st.Page("views/field.py", title="Field", icon="🗺️", url_path="field")
 how = st.Page(

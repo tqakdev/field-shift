@@ -151,12 +151,54 @@ def _label_frame(img: Any, month_label: str, *, mode: str) -> Any:
 
     draw = ImageDraw.Draw(img)
     w, h = img.size
-    band_h = max(36, h // 10)
+    band_h = max(40, h // 9)
     draw.rectangle([0, h - band_h, w, h], fill=(20, 24, 18))
     title = "Sentinel-2 NDVI" if mode == "ndvi" else "Sentinel-2 RGB"
     draw.text((10, 8), title, fill=(255, 255, 255), font=_font(14))
-    draw.text((10, h - band_h + 8), month_label, fill=(255, 255, 255), font=_font(22))
+    draw.text((10, h - band_h + 8), month_label, fill=(255, 255, 255), font=_font(20))
     return img
+
+
+def _frame_is_bad(img: Any) -> bool:
+    """True if a thumb is blank, flat, or mostly cloud/white."""
+    import numpy as np
+
+    arr = np.asarray(img.convert("RGB"))
+    h = arr.shape[0]
+    crop = arr[int(h * 0.05) : int(h * 0.9), :, :]
+    std = float(crop.std())
+    brightness = float(crop.mean())
+    sat = float((crop.max(axis=2) - crop.min(axis=2)).mean())
+    if std < 8.0:
+        return True
+    if brightness > 180.0 and sat < 25.0:
+        return True
+    if brightness > 200.0 and sat < 35.0:
+        return True
+    return False
+
+
+def _replace_bad_frames(
+    raw_frames: list[Any],
+    month_labels: list[str],
+    *,
+    mode: str,
+) -> list[Any]:
+    """Swap cloudy/blank frames for the nearest clean month; note on the label."""
+
+    good = [i for i, fr in enumerate(raw_frames) if not _frame_is_bad(fr)]
+    out: list[Any] = []
+    for i, fr in enumerate(raw_frames):
+        label = month_labels[i]
+        src = fr
+        if _frame_is_bad(fr) and good:
+            # nearest clean index
+            j = min(good, key=lambda k: abs(k - i))
+            src = raw_frames[j].copy()
+            label = f"{month_labels[i]} (from {month_labels[j]} — clouds)"
+            print(f"    frame {month_labels[i]} bad → using {month_labels[j]}")
+        out.append(_label_frame(src.copy(), label, mode=mode))
+    return out
 
 
 def _download_labeled_thumb_gif(
@@ -168,7 +210,7 @@ def _download_labeled_thumb_gif(
     mode: str = "ndvi",
     dimensions: int = 512,
 ) -> Path:
-    """Download monthly thumbs, add month labels, stitch into a GIF."""
+    """Download monthly thumbs, replace cloudy/blank, label, stitch into a GIF."""
     from PIL import Image
 
     ee_mod = init_ee()
@@ -182,7 +224,8 @@ def _download_labeled_thumb_gif(
     months = _month_starts_client(start, end)
     s2 = _s2_cs_linked(ee, geom, start, end).map(lambda img: _mask_s2_with_cs(ee, img))
 
-    frames: list[Image.Image] = []
+    raw_frames: list[Image.Image] = []
+    month_labels: list[str] = []
     with tempfile.TemporaryDirectory() as tmp:
         tmp_path = Path(tmp)
         for i, (m0, m1) in enumerate(months):
@@ -193,11 +236,12 @@ def _download_labeled_thumb_gif(
             )
             frame_path = tmp_path / f"frame_{i:03d}.png"
             urlretrieve(url, frame_path)
-            img = Image.open(frame_path).convert("RGB")
-            frames.append(_label_frame(img, m0[:7], mode=mode))
+            raw_frames.append(Image.open(frame_path).convert("RGB"))
+            month_labels.append(m0[:7])
 
-    if not frames:
+    if not raw_frames:
         raise RuntimeError("No monthly Sentinel-2 frames for GIF")
+    frames = _replace_bad_frames(raw_frames, month_labels, mode=mode)
     path.parent.mkdir(parents=True, exist_ok=True)
     frames[0].save(
         path,
@@ -207,6 +251,9 @@ def _download_labeled_thumb_gif(
         loop=0,
         optimize=True,
     )
+    # Static first-frame thumbnail for home cards
+    thumb = path.with_name(path.stem + "_thumb.png")
+    frames[0].save(thumb, format="PNG", optimize=True)
     return path
 
 
