@@ -17,13 +17,16 @@ hero(
     "How it works",
     "Field Shift turns NASA and partner Earth observations into a rotation advisory "
     "you can check against local knowledge.",
-    sub="Supports decisions — does not replace local expertise.",
+    sub="Methods, data provenance, and limitations — written for farmers and judges.",
     mode_label="Methods & data",
     live=True,
+    eyebrow="Mission documentation",
 )
 
-section("🛰 Pipeline")
-st.plotly_chart(pipeline_figure(), use_container_width=True, config={"displayModeBar": False})
+section("Pipeline")
+st.plotly_chart(
+    pipeline_figure(), use_container_width=True, config={"displayModeBar": False}
+)
 st.markdown(
     """
 1. Reduce satellite & weather datasets to **field × month** values.  
@@ -35,7 +38,7 @@ st.markdown(
 """
 )
 
-section("🌱 Data sources")
+section("Data sources")
 sources = list_sources()
 iowa = read_json("demo_iowa.json", from_mock=False) or {}
 through = iowa.get("data_through") or {}
@@ -47,17 +50,14 @@ for s in sources:
             "Dataset": s.name,
             "ID / access": s.id_or_access,
             "Resolution": s.resolution,
-            "Data through (Iowa demo)": through.get(
-                s.id_or_access.split("/")[-1].lower().replace("-", "_"),
-                through.get("ndvi_s2", "see demo cache"),
-            ),
+            "Data through (Iowa demo)": through.get("ndvi_s2", "see demo cache"),
             "Link": s.link,
         }
     )
 st.dataframe(rows, use_container_width=True, hide_index=True)
 source_caption("Demo field cache · Iowa", through.get("ndvi_s2"))
 
-section("🌾 Scoring")
+section("Scoring")
 st.write(
     "Each criterion is 0–1. Total is a weighted mean of your priority sliders. "
     "Formulas live in `fieldshift/engine/scoring.py`. Priority and what-if sliders "
@@ -74,7 +74,7 @@ st.markdown(
 """
 )
 
-section("🔍 SI anomaly model")
+section("SI anomaly model")
 st.write(
     "We fit an IsolationForest on field-month features (NDVI, soil moisture, rain, "
     "water balance, heat anomalies). Flagged months become “vulnerable seasons.” "
@@ -82,14 +82,14 @@ st.write(
     "used) is shown with confidence badges."
 )
 
-section("💧 Satellite vs ground data")
+section("Satellite vs ground data")
 st.write(
     "A satellite pixel averages tens of meters; a rain gauge or soil probe measures "
     "one point. We harmonize datasets onto a common monthly field mean and show "
     "cross-checks (e.g. IMERG vs POWER rain) so you can see where sensors agree."
 )
 
-section("⚠️ Limitations")
+section("Limitations")
 st.markdown(
     """
 - Satellite pixels are not the same as a soil probe or rain gauge on your field.  
@@ -99,7 +99,7 @@ st.markdown(
 """
 )
 
-section("📖 Glossary")
+section("Glossary")
 glossary = {
     "NDVI": "Normalized Difference Vegetation Index — green plant cover from satellites.",
     "Evapotranspiration (ET)": "Water leaving land as evaporation + plant transpiration.",
@@ -113,7 +113,7 @@ glossary = {
 for term, definition in glossary.items():
     st.markdown(f"**{term}** — {definition}")
 
-section("👥 Team & AI use")
+section("Team & AI use")
 st.write(
     "Built for NASA Space Apps Challenge 2026. See `AI_USAGE.md` for how AI assisted "
     "implementation. Human experts remain responsible for agronomic decisions."

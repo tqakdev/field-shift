@@ -1,4 +1,4 @@
-"""Strategy card rendering for Streamlit (advisory-report layout)."""
+"""Strategy card rendering — NASA mission-report layout."""
 
 from __future__ import annotations
 
@@ -20,49 +20,46 @@ def render_strategy_cards(
         st.info("No strategies available.")
         return
 
-    cols = st.columns(len(cards))
+    cols = st.columns(len(cards), gap="medium")
     for col, card in zip(cols, cards, strict=True):
         is_baseline = card.id == "current"
         with col:
-            css = "fs-card baseline" if is_baseline else "fs-card"
-            st.markdown(f'<div class="{css}">', unsafe_allow_html=True)
-            if is_baseline:
-                st.caption("Your rotation today")
-            st.markdown(f"**{card.name}**")
-            season_pills(card.sequence)
-            confidence_badge(card.confidence)
+            with st.container(border=True):
+                if is_baseline:
+                    st.caption("YOUR ROTATION TODAY")
+                st.markdown(f"**{card.name}**")
+                season_pills(card.sequence)
+                confidence_badge(card.confidence)
 
-            delta = card.delta_vs_current.get("total")
-            st.metric(
-                "Total score",
-                f"{card.scores.total:.2f}",
-                delta=(f"{delta:+.2f} vs current" if delta is not None else None),
-            )
-            if show_climate_delta and delta is not None:
-                st.caption(f"change vs today's climate priorities: {delta:+.2f}")
-            source_caption("Field Shift scoring engine")
+                delta = card.delta_vs_current.get("total")
+                st.metric(
+                    "Total score",
+                    f"{card.scores.total:.2f}",
+                    delta=(f"{delta:+.2f} vs current" if delta is not None else None),
+                )
+                if show_climate_delta and delta is not None:
+                    st.caption(f"Change vs today’s climate: {delta:+.2f}")
+                source_caption("Field Shift scoring engine")
 
-            st.plotly_chart(
-                scores_bar(card.scores),
-                use_container_width=True,
-                key=f"scores-{card.id}-{id(card)}",
-                config={"displayModeBar": False},
-            )
+                st.plotly_chart(
+                    scores_bar(card.scores),
+                    use_container_width=True,
+                    key=f"scores-{card.id}-{hash(card.name) % 10_000}",
+                    config={"displayModeBar": False},
+                )
 
-            with st.expander("Why"):
-                st.write(card.why)
-            with st.expander("Evidence"):
-                for item in card.evidence:
-                    st.write(f"• {item.text}")
-                    source_caption(item.source, getattr(item, "data_through", None))
-            with st.expander("Benefits"):
-                for b in card.benefits:
-                    st.write(f"• {b}")
-            with st.expander("Data gaps"):
-                for g in card.data_gaps:
-                    st.write(f"• {g}")
-            with st.expander("Risks to check locally"):
-                for r in card.risks_for_local_review:
-                    st.write(f"• {r}")
-
-            st.markdown("</div>", unsafe_allow_html=True)
+                with st.expander("Why"):
+                    st.write(card.why)
+                with st.expander("Evidence"):
+                    for item in card.evidence:
+                        st.write(f"• {item.text}")
+                        source_caption(item.source, getattr(item, "data_through", None))
+                with st.expander("Benefits"):
+                    for b in card.benefits:
+                        st.write(f"• {b}")
+                with st.expander("Data gaps"):
+                    for g in card.data_gaps:
+                        st.write(f"• {g}")
+                with st.expander("Risks to check locally"):
+                    for r in card.risks_for_local_review:
+                        st.write(f"• {r}")

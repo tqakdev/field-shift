@@ -1,207 +1,334 @@
-"""Field Shift design system — theme CSS + shared color tokens."""
+"""Field Shift design system — NASA-inspired mission UI."""
 
 from __future__ import annotations
 
 import streamlit as st
 
-# Accent tokens (primary/backgrounds live in .streamlit/config.toml)
-LEAF = "#3F7D3A"
-SOIL = "#8B5E3C"
-SKY = "#3A7CA5"
-WHEAT = "#D9A441"
-ALERT = "#B23A3A"
-MUTED = "#6B6B6B"
-PAPER = "#FBF8F2"
-WHEAT_BG = "#F0EAD9"
-INK = "#2B2B2B"
+# NASA brand-adjacent tokens (official blue / worm-era red, mission neutrals)
+NASA_BLUE = "#0B3D91"
+NASA_BLUE_MID = "#1A4FA0"
+NASA_RED = "#E03C31"
+INK = "#0B1220"
+MUTED = "#5B6577"
+PAPER = "#FFFFFF"
+PANEL = "#EEF2F7"
+HAIRLINE = "#D5DCE6"
+EARTH = "#1B7A4E"  # vegetation / soil health (data, not brand)
+SKY = "#2F6FED"  # rain / water series
+SOIL = "#8B6914"
+ALERT = NASA_RED
+WHEAT = "#C4A035"
+LEAF = EARTH  # alias used by charts/components
+WHEAT_BG = PANEL
 
 SCORE_COLORS = {
     "water": SKY,
-    "soil_health": SOIL,
-    "erosion": WHEAT,
-    "pest_break": LEAF,
-    "climate_fit": "#5A8F6B",
-    "income": "#9A7B4F",
+    "soil_health": EARTH,
+    "erosion": SOIL,
+    "pest_break": "#0B3D91",
+    "climate_fit": "#3D7EA6",
+    "income": "#6B5B3E",
 }
+
+_THEME_VERSION = "nasa-v4"
 
 
 def inject_theme() -> None:
-    """Inject global CSS once per session (advisory-report look)."""
-    if st.session_state.get("_fs_theme_injected"):
-        return
-    st.session_state["_fs_theme_injected"] = True
+    """Inject global CSS on every run (Streamlit clears custom HTML on rerun)."""
+    st.session_state["_fs_theme_ver"] = _THEME_VERSION
     st.markdown(
         f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap');
 
-html, body, [class*="css"] {{
-  font-family: "Source Sans 3", "Source Sans Pro", sans-serif;
+html, body, [class*="css"], .stApp, .stMarkdown, button, input, label {{
+  font-family: "IBM Plex Sans", "Helvetica Neue", Helvetica, Arial, sans-serif !important;
 }}
+
+/* Hide Streamlit chrome noise */
+#MainMenu {{ visibility: hidden; }}
+header[data-testid="stHeader"] {{ background: transparent; }}
+footer {{ visibility: hidden; }}
+div[data-testid="stDecoration"] {{ display: none; }}
+.stDeployButton, [data-testid="stToolbar"], [data-testid="stAppDeployButton"] {{
+  display: none !important;
+}}
+
 .block-container {{
-  max-width: 1100px;
-  padding-top: 1.25rem;
-  padding-bottom: 3rem;
+  max-width: 1080px;
+  padding-top: 1.1rem;
+  padding-bottom: 3.5rem;
 }}
+
+/* Sidebar — mission strip */
+section[data-testid="stSidebar"],
+section[data-testid="stSidebar"] > div,
+[data-testid="stSidebarContent"] {{
+  background-color: {NASA_BLUE} !important;
+  background-image: none !important;
+  border-right: none !important;
+}}
+section[data-testid="stSidebar"] p,
+section[data-testid="stSidebar"] span,
+section[data-testid="stSidebar"] label,
+section[data-testid="stSidebar"] a {{
+  color: #F4F7FB !important;
+}}
+section[data-testid="stSidebar"] [data-testid="stSidebarNavLink"] {{
+  border-radius: 4px;
+  margin: 0.15rem 0.4rem;
+  padding: 0.5rem 0.7rem !important;
+}}
+section[data-testid="stSidebar"] [data-testid="stSidebarNavLink"][aria-current="page"],
+section[data-testid="stSidebar"] [data-testid="stSidebarNavLink"]:hover {{
+  background: rgba(255,255,255,0.14) !important;
+}}
+
 h1, .fs-title {{
-  font-size: 2.2rem !important;
+  font-size: 2.35rem !important;
   font-weight: 700 !important;
   color: {INK} !important;
-  letter-spacing: -0.02em;
-  line-height: 1.15 !important;
+  letter-spacing: -0.03em;
+  line-height: 1.12 !important;
+  margin-bottom: 0.35rem !important;
 }}
 h2, .fs-section-title {{
-  font-size: 1.4rem !important;
-  font-weight: 700 !important;
+  font-size: 1.35rem !important;
+  font-weight: 600 !important;
   color: {INK} !important;
-  margin-top: 0.25rem !important;
+  letter-spacing: -0.01em;
 }}
 h3 {{
-  font-size: 1.15rem !important;
+  font-size: 1.05rem !important;
   font-weight: 600 !important;
+  color: {INK} !important;
 }}
-p, .stMarkdown, .stText {{
-  font-size: 1.05rem;
-  line-height: 1.45;
+p, .stMarkdown p {{
+  font-size: 1.02rem;
+  line-height: 1.5;
   color: {INK};
 }}
-.fs-caption, [data-testid="stCaptionContainer"] {{
-  font-size: 0.85rem !important;
+[data-testid="stCaptionContainer"], .fs-caption {{
+  font-size: 0.82rem !important;
   color: {MUTED} !important;
+  font-family: "IBM Plex Sans", sans-serif !important;
 }}
+
+/* Hero — NASA meatball bar + mission copy */
 .fs-hero {{
-  background: linear-gradient(135deg, {WHEAT_BG} 0%, {PAPER} 55%, #e8f0e4 100%);
-  border: 1px solid #e2d8c0;
-  border-radius: 12px;
-  padding: 1.5rem 1.75rem;
-  margin-bottom: 1.5rem;
+  position: relative;
+  background: linear-gradient(180deg, #F7F9FC 0%, {PAPER} 100%);
+  border: 1px solid {HAIRLINE};
+  border-radius: 4px;
+  padding: 1.65rem 1.75rem 1.4rem 1.75rem;
+  margin-bottom: 1.75rem;
+  overflow: hidden;
+}}
+.fs-hero::before {{
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 5px;
+  background: linear-gradient(180deg, {NASA_BLUE} 0%, {NASA_RED} 100%);
+}}
+.fs-eyebrow {{
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: {NASA_BLUE};
+  margin: 0 0 0.55rem 0;
 }}
 .fs-hero-promise {{
-  font-size: 1.15rem;
-  margin: 0.6rem 0 0.35rem 0;
-  max-width: 42rem;
+  font-size: 1.12rem;
+  margin: 0.55rem 0 0.4rem 0;
+  max-width: 40rem;
+  color: {INK};
+  font-weight: 500;
 }}
 .fs-hero-sub {{
   color: {MUTED};
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   margin: 0;
 }}
 .fs-mode-pill {{
   display: inline-block;
-  margin-top: 0.85rem;
-  padding: 0.25rem 0.7rem;
-  border-radius: 999px;
-  background: {LEAF};
-  color: white;
-  font-size: 0.8rem;
+  margin-top: 0.9rem;
+  padding: 0.28rem 0.75rem;
+  border-radius: 2px;
+  background: {NASA_BLUE};
+  color: white !important;
+  font-size: 0.72rem;
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-family: "IBM Plex Mono", monospace;
 }}
 .fs-mode-pill.demo {{
-  background: {SOIL};
+  background: {MUTED};
 }}
+
 .fs-section {{
-  margin: 1.75rem 0 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 2rem 0 0.45rem 0;
+  padding-bottom: 0.45rem;
+  border-bottom: 1px solid {HAIRLINE};
 }}
 .fs-section-sub {{
   color: {MUTED};
-  font-size: 0.95rem;
-  margin-top: -0.35rem;
-  margin-bottom: 0.85rem;
+  font-size: 0.92rem;
+  margin: 0 0 1rem 0;
 }}
-.fs-chip-row {{
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 0.75rem;
-  margin: 0.5rem 0 1rem 0;
-}}
-.fs-chip {{
-  background: {WHEAT_BG};
-  border: 1px solid #e0d5bb;
-  border-radius: 10px;
-  padding: 0.85rem 1rem;
-}}
-.fs-chip-label {{
-  font-size: 0.8rem;
-  color: {MUTED};
-  margin: 0 0 0.25rem 0;
-}}
-.fs-chip-value {{
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: {INK};
-  margin: 0;
-}}
-.fs-banner {{
-  background: #e8f0e4;
-  border-left: 4px solid {LEAF};
-  border-radius: 8px;
-  padding: 1rem 1.15rem;
-  margin: 0.75rem 0 1.25rem 0;
-  font-size: 1.05rem;
-}}
-.fs-banner strong {{ color: {LEAF}; }}
-.fs-card {{
-  border: 1px solid #e0d5bb;
-  border-radius: 10px;
-  padding: 0.9rem 1rem;
-  background: #fffef9;
-  height: 100%;
-}}
-.fs-card.baseline {{
-  border: 2px solid {LEAF};
-  background: #f3f7ef;
-}}
-.fs-card.demo-pick {{
-  background: #fffef9;
-}}
-.fs-pills {{
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  margin: 0.4rem 0 0.6rem 0;
-}}
-.fs-pill {{
-  display: inline-block;
-  background: {WHEAT_BG};
-  border: 1px solid #dccfae;
-  border-radius: 999px;
-  padding: 0.15rem 0.55rem;
-  font-size: 0.8rem;
-  color: {INK};
-}}
-.fs-badge {{
-  display: inline-block;
-  padding: 0.15rem 0.55rem;
-  border-radius: 4px;
-  border: 1px solid;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}}
-.fs-badge.high {{ color: {LEAF}; border-color: {LEAF}; }}
-.fs-badge.medium {{ color: {SOIL}; border-color: {SOIL}; }}
-.fs-badge.low {{ color: {ALERT}; border-color: {ALERT}; }}
 .fs-step {{
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.6rem;
-  height: 1.6rem;
-  border-radius: 999px;
-  background: {LEAF};
-  color: white;
-  font-size: 0.85rem;
+  min-width: 1.55rem;
+  height: 1.55rem;
+  margin-right: 0.25rem;
+  padding: 0 0.35rem;
+  border-radius: 2px;
+  background: {NASA_BLUE};
+  color: white !important;
+  font-size: 0.78rem;
   font-weight: 700;
-  margin-right: 0.45rem;
+  font-family: "IBM Plex Mono", monospace;
 }}
+
+.fs-chip {{
+  background: {PANEL};
+  border: 1px solid {HAIRLINE};
+  border-top: 3px solid {NASA_BLUE};
+  border-radius: 2px;
+  padding: 0.85rem 0.95rem;
+  min-height: 5.2rem;
+}}
+.fs-chip-label {{
+  font-size: 0.72rem;
+  color: {MUTED};
+  margin: 0 0 0.35rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-family: "IBM Plex Mono", monospace;
+  font-weight: 500;
+}}
+.fs-chip-value {{
+  font-size: 1.02rem;
+  font-weight: 600;
+  color: {INK};
+  margin: 0;
+  line-height: 1.3;
+}}
+
+.fs-banner {{
+  background: {PANEL};
+  border-left: 4px solid {NASA_BLUE};
+  border-radius: 2px;
+  padding: 1rem 1.15rem;
+  margin: 0.5rem 0 1.15rem 0;
+  font-size: 1.02rem;
+  color: {INK};
+}}
+.fs-banner strong {{ color: {NASA_BLUE}; }}
+
+.fs-card {{
+  border: 1px solid {HAIRLINE};
+  border-radius: 2px;
+  padding: 1rem 1.05rem 0.85rem;
+  background: {PAPER};
+  height: 100%;
+  box-shadow: 0 1px 0 rgba(11, 61, 145, 0.04);
+}}
+.fs-card.baseline {{
+  border: 1px solid {NASA_BLUE};
+  box-shadow: inset 0 0 0 1px {NASA_BLUE};
+  background: #F5F8FD;
+}}
+.fs-card.demo-pick {{
+  transition: box-shadow 0.2s ease;
+}}
+.fs-card.demo-pick img {{
+  border-radius: 2px;
+  border: 1px solid {HAIRLINE};
+}}
+
+.fs-pills {{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin: 0.45rem 0 0.55rem 0;
+  align-items: center;
+}}
+.fs-pill {{
+  display: inline-block;
+  background: {PANEL};
+  border: 1px solid {HAIRLINE};
+  border-radius: 2px;
+  padding: 0.18rem 0.5rem;
+  font-size: 0.75rem;
+  color: {INK};
+  font-family: "IBM Plex Mono", monospace;
+}}
+.fs-pill-arrow {{
+  color: {MUTED};
+  font-size: 0.75rem;
+  padding: 0 0.1rem;
+}}
+
+.fs-badge {{
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.18rem 0.5rem;
+  border-radius: 2px;
+  border: 1px solid;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-family: "IBM Plex Mono", monospace;
+}}
+.fs-badge.high {{ color: {EARTH}; border-color: {EARTH}; background: #EDF7F1; }}
+.fs-badge.medium {{ color: {NASA_BLUE}; border-color: {NASA_BLUE}; background: #EEF3FB; }}
+.fs-badge.low {{ color: {NASA_RED}; border-color: {NASA_RED}; background: #FDF0EF; }}
+
 div[data-testid="stMetricValue"] {{
-  font-size: 1.35rem !important;
+  font-size: 1.45rem !important;
+  font-weight: 700 !important;
+  font-family: "IBM Plex Mono", monospace !important;
+  color: {INK} !important;
 }}
+div[data-testid="stMetricLabel"] {{
+  font-size: 0.78rem !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: {MUTED} !important;
+}}
+
+/* Primary buttons */
+.stButton > button[kind="primary"],
+.stButton > button[data-testid="baseButton-primary"] {{
+  background: {NASA_BLUE} !important;
+  border: 1px solid {NASA_BLUE} !important;
+  border-radius: 2px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em;
+}}
+.stButton > button[kind="primary"]:hover {{
+  background: {NASA_BLUE_MID} !important;
+}}
+
+div[data-testid="stSlider"] label {{
+  font-size: 0.92rem !important;
+}}
+
 @media (max-width: 400px) {{
-  .block-container {{ padding-left: 0.75rem; padding-right: 0.75rem; }}
-  h1, .fs-title {{ font-size: 1.7rem !important; }}
+  .block-container {{ padding-left: 0.7rem; padding-right: 0.7rem; }}
+  h1, .fs-title {{ font-size: 1.65rem !important; }}
+  .fs-chip-value {{ font-size: 0.95rem; }}
 }}
 </style>
         """,

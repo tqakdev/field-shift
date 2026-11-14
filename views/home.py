@@ -1,4 +1,4 @@
-"""Home view: hero, demo field picker, analyze-my-field map."""
+"""Home view: NASA-style hero, demo fields, analyze-my-field."""
 
 from __future__ import annotations
 
@@ -37,14 +37,17 @@ hero(
     "Field Shift",
     "See what NASA satellites know about your field, and compare crop rotations "
     "that build soil and resilience.",
-    sub="Supports, not replaces, your judgment.",
-    mode_label="Live NASA data" if live else "Demo",
+    sub="Decision support for farmers — supports, not replaces, your judgment.",
+    mode_label="Live NASA data" if live else "Cached demo mode",
     live=live,
 )
 
-section("🛰 Try a demo field", "Three contrasting farms — open one to see a full advisory.")
+section(
+    "Try a demo field",
+    "Three contrasting farms pre-loaded from NASA / ESA / USGS archives.",
+)
 fields = list_demo_fields()
-cols = st.columns(min(3, max(1, len(fields))))
+cols = st.columns(min(3, max(1, len(fields))), gap="medium")
 for col, field in zip(cols, fields, strict=False):
     with col:
         thumb = CACHE_DIR / f"demo_{field.id}_ndvi_thumb.png"
@@ -65,18 +68,19 @@ for col, field in zip(cols, fields, strict=False):
             st.switch_page("views/field.py")
 
 section(
-    "🌱 Analyze my own field",
-    "Draw a polygon on cropland (1–5000 ha), then we’ll walk you through the report.",
+    "Analyze my own field",
+    "Draw a polygon on cropland (1–5000 ha). Live runs use ~10 years of Earth observations.",
 )
-st.markdown(
-    """
-1. **Draw** your field on the map  
-2. **Tell us** about your farm (rotation, soil, priorities)  
-3. **Compare** rotation options scored for you  
-"""
-)
+step_cols = st.columns(3)
+with step_cols[0]:
+    st.markdown("**01 — Draw**  \nOutline your field on the imagery.")
+with step_cols[1]:
+    st.markdown("**02 — Describe**  \nRotation, soil, water, priorities.")
+with step_cols[2]:
+    st.markdown("**03 — Compare**  \nScored rotation options with evidence.")
+
 m = field_map(draw=True, center=(42.0, -93.6), zoom=5)
-map_state = st_folium(m, width=None, height=420, key="home-draw")
+map_state = st_folium(m, width=None, height=400, key="home-draw")
 
 drawn: dict[str, Any] | None = None
 if map_state and map_state.get("last_active_drawing"):
@@ -85,26 +89,26 @@ if map_state and map_state.get("last_active_drawing"):
 if not live:
     st.button("Live analysis unavailable (demo mode)", disabled=True)
 else:
-    if st.button(
+    clicked = st.button(
         "Analyze drawn field",
         disabled=drawn is None,
         type="primary",
-        use_container_width=False,
-    ):
+    )
+    if clicked:
         try:
             progress = st.progress(0, text="Analyzing 10 years of NASA data (~60 s)")
-            progress.progress(15, text="Contacting Earth Engine & NASA POWER…")
+            progress.progress(20, text="Querying Earth Engine & NASA POWER…")
             with st.spinner("Analyzing 10 years of NASA data (~60 s)"):
                 conditions = _cached_analyze(
                     json.dumps(drawn, sort_keys=True), "Your field"
                 )
-            progress.progress(100, text="Done")
+            progress.progress(100, text="Analysis complete")
             st.session_state["field_id"] = "custom"
             st.session_state["field_polygon"] = drawn
             st.session_state["custom_conditions"] = conditions
             st.session_state["_rotation_field"] = "custom"
             st.session_state["current_rotation"] = ["maize", "soybean"]
-            st.success("Analysis complete — opening your field report.")
+            st.success("Opening your field report.")
             st.switch_page("views/field.py")
         except ValueError as exc:
             st.error(str(exc))

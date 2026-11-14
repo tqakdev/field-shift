@@ -1,4 +1,4 @@
-"""Reusable Field Shift UI building blocks (advisory-report look)."""
+"""Reusable Field Shift UI building blocks (NASA mission-report look)."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from typing import Any
 
 import streamlit as st
 
-from ui.theme import ALERT, LEAF, MUTED, SCORE_COLORS, SOIL, WHEAT
+from ui.theme import EARTH, MUTED, NASA_BLUE, SCORE_COLORS
 
 
 def hero(
@@ -16,13 +16,15 @@ def hero(
     sub: str | None = None,
     mode_label: str = "Demo",
     live: bool = False,
+    eyebrow: str = "NASA Space Apps · Earth Science",
 ) -> None:
-    """Top-of-page hero with promise line and mode pill."""
+    """Top-of-page hero with NASA-style accent bar and mode pill."""
     pill_class = "fs-mode-pill" if live else "fs-mode-pill demo"
     sub_html = f'<p class="fs-hero-sub">{sub}</p>' if sub else ""
     st.markdown(
         f"""
 <div class="fs-hero">
+  <p class="fs-eyebrow">{eyebrow}</p>
   <div class="fs-title">{title}</div>
   <p class="fs-hero-promise">{promise}</p>
   {sub_html}
@@ -35,10 +37,14 @@ def hero(
 
 def section(title: str, subtitle: str | None = None, *, step: int | None = None) -> None:
     """Numbered section header with optional subtitle."""
-    step_html = f'<span class="fs-step">{step}</span>' if step is not None else ""
+    # Strip leading emoji for a cleaner NASA look; keep text.
+    clean = title.lstrip()
+    step_html = (
+        f'<span class="fs-step">{step:02d}</span>&nbsp;' if step is not None else ""
+    )
     st.markdown(
         f'<div class="fs-section">{step_html}'
-        f'<span class="fs-section-title">{title}</span></div>',
+        f'<span class="fs-section-title">{clean}</span></div>',
         unsafe_allow_html=True,
     )
     if subtitle:
@@ -50,7 +56,6 @@ def fact_chips(chips: list[dict[str, str]]) -> None:
     cols = st.columns(len(chips) if chips else 1)
     for col, chip in zip(cols, chips, strict=False):
         with col:
-            help_txt = chip.get("help")
             st.markdown(
                 f"""
 <div class="fs-chip">
@@ -60,34 +65,34 @@ def fact_chips(chips: list[dict[str, str]]) -> None:
                 """,
                 unsafe_allow_html=True,
             )
-            if help_txt:
-                st.caption(help_txt)
+            if chip.get("help"):
+                st.caption(chip["help"])
 
 
 def recommendation_banner(text: str) -> None:
     """One-sentence top recommendation callout."""
     st.markdown(
-        f'<div class="fs-banner"><strong>Top pick for you:</strong> {text}</div>',
+        f'<div class="fs-banner"><strong>Recommended strategy — </strong>{text}</div>',
         unsafe_allow_html=True,
     )
 
 
 def confidence_badge(level: str) -> None:
-    """Accessible confidence badge (color + text label)."""
+    """Accessible confidence badge (color + text + density marks)."""
     level = (level or "medium").lower()
     icons = {"high": "●●●", "medium": "●●○", "low": "●○○"}
     icon = icons.get(level, "●●○")
     st.markdown(
         f'<span class="fs-badge {level}" title="Confidence: {level}">'
-        f"{icon} {level} confidence</span>",
+        f"{icon} {level}</span>",
         unsafe_allow_html=True,
     )
 
 
 def season_pills(sequence: list[Any]) -> None:
-    """Render rotation sequence as season pills."""
+    """Render rotation sequence as season pills with arrows."""
     parts: list[str] = []
-    for slot in sequence:
+    for i, slot in enumerate(sequence):
         crop = getattr(slot, "crop_id", None) or (
             slot.get("crop_id") if isinstance(slot, dict) else "?"
         )
@@ -96,11 +101,10 @@ def season_pills(sequence: list[Any]) -> None:
         )
         name = str(crop).replace("_", " ").title()
         label = f"{name} {months}".strip() if months else name
+        if i:
+            parts.append('<span class="fs-pill-arrow">→</span>')
         parts.append(f'<span class="fs-pill">{label}</span>')
-    st.markdown(
-        '<div class="fs-pills">' + " → ".join(parts) + "</div>",
-        unsafe_allow_html=True,
-    )
+    st.markdown('<div class="fs-pills">' + "".join(parts) + "</div>", unsafe_allow_html=True)
 
 
 def weights_bar(weights: dict[str, float]) -> None:
@@ -108,12 +112,12 @@ def weights_bar(weights: dict[str, float]) -> None:
     import plotly.graph_objects as go
 
     labels = {
-        "water": "💧 Water",
-        "soil_health": "🌱 Soil",
-        "erosion": "🛡 Erosion",
-        "pest_break": "🐛 Pest",
-        "climate_fit": "🌤 Climate",
-        "income": "💰 Income",
+        "water": "Water",
+        "soil_health": "Soil",
+        "erosion": "Erosion",
+        "pest_break": "Pest",
+        "climate_fit": "Climate",
+        "income": "Income",
     }
     keys = list(weights.keys())
     fig = go.Figure(
@@ -121,19 +125,21 @@ def weights_bar(weights: dict[str, float]) -> None:
             x=[weights[k] for k in keys],
             y=[labels.get(k, k) for k in keys],
             orientation="h",
-            marker_color=[SCORE_COLORS.get(k, LEAF) for k in keys],
+            marker_color=[SCORE_COLORS.get(k, NASA_BLUE) for k in keys],
             text=[f"{weights[k]:.1f}" for k in keys],
-            textposition="auto",
+            textposition="outside",
+            cliponaxis=False,
         )
     )
     fig.update_layout(
-        height=180,
-        margin={"l": 80, "r": 20, "t": 10, "b": 10},
-        xaxis={"range": [0, 2.2], "title": None},
+        height=170,
+        margin={"l": 70, "r": 36, "t": 8, "b": 8},
+        xaxis={"range": [0, 2.35], "title": None, "gridcolor": "#EEF2F7"},
         yaxis={"autorange": "reversed"},
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
         showlegend=False,
+        font={"family": "IBM Plex Sans, sans-serif", "size": 12, "color": "#0B1220"},
     )
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
@@ -148,25 +154,25 @@ def demo_field_card(
     button_key: str,
 ) -> bool:
     """Home-page demo picker card. Returns True if Open clicked."""
-    st.markdown('<div class="fs-card demo-pick">', unsafe_allow_html=True)
-    if thumb_path:
-        st.image(thumb_path, use_container_width=True)
-    st.subheader(name)
-    st.caption(f"{climate} · {country}")
-    st.write(f"**Rotation:** {rotation}")
-    clicked = st.button("Open", key=button_key, use_container_width=True, type="primary")
-    st.markdown("</div>", unsafe_allow_html=True)
-    return clicked
+    with st.container(border=True):
+        if thumb_path:
+            st.image(thumb_path, use_container_width=True)
+        st.markdown(f"**{name}**")
+        st.caption(f"{climate} · {country}")
+        st.caption(f"Rotation · {rotation}")
+        return st.button(
+            "Open field report",
+            key=button_key,
+            use_container_width=True,
+            type="primary",
+        )
 
 
-# Re-export tokens for charts
 __all__ = [
-    "ALERT",
-    "LEAF",
+    "EARTH",
     "MUTED",
+    "NASA_BLUE",
     "SCORE_COLORS",
-    "SOIL",
-    "WHEAT",
     "confidence_badge",
     "demo_field_card",
     "fact_chips",

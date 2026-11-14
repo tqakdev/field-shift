@@ -125,39 +125,50 @@ grace_label = (
     f"{grace_cm:+.1f} cm/yr" if grace_cm is not None else (grace.get("detail") or "—")
 )
 
+st.markdown(
+    '<p class="fs-eyebrow">FIELD REPORT</p>',
+    unsafe_allow_html=True,
+)
 st.title(conditions.name)
 st.caption(f"{conditions.climate_label} · {conditions.country or 'Custom field'}")
 
 # --- 1. Your field ---
 section(
-    "🛰 Your field",
-    "Satellite view of the polygon and a year of Sentinel-2.",
+    "Your field",
+    "Satellite basemap with your polygon, plus a Sentinel-2 monthly timelapse.",
     step=1,
 )
-c_map, c_tl = st.columns([1, 1])
+c_map, c_tl = st.columns([1, 1], gap="large")
 with c_map:
     fmap = field_map(conditions.polygon)
-    st_folium(fmap, width=None, height=360, key=f"field-map-{field_id}")
+    st_folium(fmap, width=None, height=380, key=f"field-map-{field_id}")
 with c_tl:
     mode = st.radio(
-        "Timelapse",
+        "Imagery product",
         ["ndvi", "rgb"],
-        format_func=lambda x: "Plant greenness (NDVI)" if x == "ndvi" else "True color (RGB)",
+        format_func=lambda x: (
+            "Plant greenness (NDVI)" if x == "ndvi" else "True color (RGB)"
+        ),
         horizontal=True,
         key=f"tl-mode-{field_id}",
     )
+    play = st.toggle("Autoplay GIF", value=True, key=f"tl-play-{field_id}")
     tl = get_timelapse(field_id, index=mode)
     if tl.get("path") and Path(tl["path"]).exists():
         frames = _gif_png_frames(tl["path"])
-        st.image(tl["path"], caption=f"Sentinel-2 {mode.upper()} · autoplay")
-        idx = st.slider(
-            "Month frame",
-            0,
-            max(0, len(frames) - 1),
-            0,
-            key=f"tl-slider-{field_id}-{mode}",
-        )
-        st.image(frames[idx], use_container_width=True)
+        if play:
+            st.image(tl["path"], use_container_width=True)
+            st.caption("Autoplay · monthly cloud-masked composites")
+        else:
+            idx = st.slider(
+                "Month frame",
+                0,
+                max(0, len(frames) - 1),
+                min(7, max(0, len(frames) - 1)),
+                key=f"tl-slider-{field_id}-{mode}",
+            )
+            st.image(frames[idx], use_container_width=True)
+            st.caption("Scrub months manually — labels are burned into each frame")
         source_caption(
             "Sentinel-2 NDVI" if mode == "ndvi" else "Sentinel-2 RGB",
             ndvi_through,
@@ -167,8 +178,8 @@ with c_tl:
 
 # --- 2. What the satellites see ---
 section(
-    "🌱 What the satellites see",
-    "Key facts first, then the seasonal pattern.",
+    "What the satellites see",
+    "Key facts first, then the seasonal pattern across a typical year.",
     step=2,
 )
 chips = [
@@ -205,7 +216,7 @@ st.caption(
 source_caption("Sentinel-2 / SMAP / rain_best / water balance", rain_through)
 
 anoms = payload.get("anomalies") or {}
-with st.expander("🔍 Stress & anomalies (SI)"):
+with st.expander("Stress & anomalies (SI model)"):
     vulns = anoms.get("vulnerable_seasons") or []
     if vulns:
         for v in vulns:
@@ -224,7 +235,7 @@ with st.expander("🔍 Stress & anomalies (SI)"):
 
 # --- 3. About your farm ---
 section(
-    "🌾 About your farm",
+    "About your farm",
     "Your rotation, soil, water, and what matters most.",
     step=3,
 )
@@ -268,12 +279,12 @@ with right:
 
 st.markdown("**What matters most to you?**")
 w_meta = [
-    ("water", "💧 Water"),
-    ("soil_health", "🌱 Soil health"),
-    ("erosion", "🛡 Erosion"),
-    ("pest_break", "🐛 Pest break"),
-    ("climate_fit", "🌤 Climate fit"),
-    ("income", "💰 Income"),
+    ("water", "Water"),
+    ("soil_health", "Soil health"),
+    ("erosion", "Erosion"),
+    ("pest_break", "Pest break"),
+    ("climate_fit", "Climate fit"),
+    ("income", "Income"),
 ]
 w_cols = st.columns(3)
 weights: dict[str, float] = {}
@@ -284,7 +295,7 @@ weights_bar(weights)
 
 # --- 4 + 5 Options / what-if (live re-score) ---
 section(
-    "🌾 Your options",
+    "Your options",
     "Scored for your priorities — updates as you move the sliders.",
     step=4,
 )
@@ -323,13 +334,13 @@ def _options_block() -> None:
         render_strategy_cards(cards, show_climate_delta=climate_shifted)
 
     section(
-        "🌤 What if the climate shifts?",
+        "What if the climate shifts?",
         "Move the sliders — cards re-score from cached features only "
         "(no Earth Engine re-extract).",
         step=5,
     )
     st.session_state["rain_mult"] = st.slider(
-        "💧 Rainfall change (multiplier)",
+        "Rainfall change (multiplier)",
         0.7,
         1.3,
         float(st.session_state["rain_mult"]),
@@ -337,7 +348,7 @@ def _options_block() -> None:
         key=f"rain-{field_id}",
     )
     st.session_state["temp_offset"] = st.slider(
-        "🌤 Temperature offset (°C)",
+        "Temperature offset (°C)",
         0.0,
         3.0,
         float(st.session_state["temp_offset"]),
@@ -363,7 +374,7 @@ else:
 
 # --- 6. Reliability ---
 section(
-    "🔍 How reliable is this?",
+    "How reliable is this?",
     "Where the numbers come from, and where human judgment still matters.",
     step=6,
 )
