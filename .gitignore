@@ -35,3 +35,8 @@ npm-debug.log*
 # Misc
 *.tmp
 .cache/
+
+# Live “analyze my field” cache (do not commit user extracts)
+fieldshift/cache/demo_custom.json
+fieldshift/cache/demo_custom_*.parquet
+fieldshift/cache/live_*
