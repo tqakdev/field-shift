@@ -45,10 +45,12 @@ st.dataframe(
     hide_index=True,
 )
 
-st.header("Scoring (preview)")
+st.header("Scoring")
 st.write(
     "Each criterion is 0–1. Total is a weighted mean of the priority sliders. "
-    "Full formulas land in Phase 3 engine docstrings. Phase 1 scores are MOCK placeholders."
+    "Formulas live in the engine (`fieldshift/engine/scoring.py`). "
+    "Demo fields use precomputed NASA / ESA / USGS series; priority and what-if "
+    "sliders only re-score — they never re-extract Earth Engine data."
 )
 
 st.header("SI anomaly model")
@@ -56,18 +58,16 @@ st.write(
     "We fit an IsolationForest on field-month features (NDVI, soil moisture, rain, water "
     "balance, heat anomalies). Flagged months become “vulnerable seasons.” The model finds "
     "unusual patterns — not causes. Uncertainty (contamination, years used) is shown with "
-    "results when the engine is live."
+    "the strategy confidence badges."
 )
 
 st.header("Limitations")
 st.markdown(
     """
-- Phase 1 UI uses labelled MOCK data with obviously round numbers.
 - Satellite pixels are not the same as a soil probe or rain gauge on your field.
 - Crop table values are typical published ranges — they need local expert review.
-- If time runs short, cut in this order (never the SI model or evidence tagging):
-  (a) Punjab demo field, (b) live analysis of newly drawn fields, (c) timelapse,
-  (d) docker-compose polish, (e) About / How-it-works page depth.
+- Live analysis of newly drawn fields needs Earth Engine credentials and ~60 s.
+- Demo fields load instantly from committed cache (no credentials required).
 """
 )
 

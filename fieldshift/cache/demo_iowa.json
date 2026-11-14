@@ -1,0 +1,865 @@
+{
+  "using_real_data": true,
+  "conditions": {
+    "field_id": "iowa",
+    "name": "Central Iowa (demo)",
+    "country": "USA",
+    "climate_label": "Humid continental \u2014 maize / soybean",
+    "polygon": {
+      "type": "Polygon",
+      "coordinates": [
+        [
+          [
+            -93.605,
+            42.002
+          ],
+          [
+            -93.595,
+            42.002
+          ],
+          [
+            -93.595,
+            42.01
+          ],
+          [
+            -93.605,
+            42.01
+          ],
+          [
+            -93.605,
+            42.002
+          ]
+        ]
+      ]
+    },
+    "monthly_profile": [
+      {
+        "month": 1,
+        "ndvi": 0.09133815062989967,
+        "soil_moisture": 0.2945079177618027,
+        "rain_mm": 43.57660172283649,
+        "water_balance_mm": 29.771479385548634,
+        "temperature_c": -6.381935483870968
+      },
+      {
+        "month": 2,
+        "ndvi": 0.0932761301831137,
+        "soil_moisture": 0.3050884783267975,
+        "rain_mm": 29.98800151491165,
+        "water_balance_mm": 4.5326670472145505,
+        "temperature_c": -3.6927586206896548
+      },
+      {
+        "month": 3,
+        "ndvi": 0.20097225065588006,
+        "soil_moisture": 0.3156713455915451,
+        "rain_mm": 77.85480382704735,
+        "water_balance_mm": 18.914454267302276,
+        "temperature_c": 3.5111612903225806
+      },
+      {
+        "month": 4,
+        "ndvi": 0.28501529219234273,
+        "soil_moisture": 0.3095656901597977,
+        "rain_mm": 76.7710031478405,
+        "water_balance_mm": -17.813158501228735,
+        "temperature_c": 9.420366666666666
+      },
+      {
+        "month": 5,
+        "ndvi": 0.4550014709623936,
+        "soil_moisture": 0.30393350720405576,
+        "rain_mm": 115.52140640354158,
+        "water_balance_mm": -21.803638553600837,
+        "temperature_c": 16.564516129032256
+      },
+      {
+        "month": 6,
+        "ndvi": 0.5571659343882025,
+        "soil_moisture": 0.2824037477374077,
+        "rain_mm": 130.73600487089158,
+        "water_balance_mm": -27.911426428626264,
+        "temperature_c": 22.852533333333334
+      },
+      {
+        "month": 7,
+        "ndvi": 0.6316671816869902,
+        "soil_moisture": 0.267708882689476,
+        "rain_mm": 118.9700035033226,
+        "water_balance_mm": -45.977059873243135,
+        "temperature_c": 24.74748387096774
+      },
+      {
+        "month": 8,
+        "ndvi": 0.653706957011301,
+        "soil_moisture": 0.24215776175260545,
+        "rain_mm": 91.48440223503113,
+        "water_balance_mm": -55.66027259618305,
+        "temperature_c": 23.398870967741935
+      },
+      {
+        "month": 9,
+        "ndvi": 0.5332800394279377,
+        "soil_moisture": 0.234986811876297,
+        "rain_mm": 105.3527308620106,
+        "water_balance_mm": -2.952005718095005,
+        "temperature_c": 20.02790909090909
+      },
+      {
+        "month": 10,
+        "ndvi": 0.4179976156959066,
+        "soil_moisture": 0.24123174995183944,
+        "rain_mm": 85.29400261640549,
+        "water_balance_mm": 21.588966407754207,
+        "temperature_c": 11.396129032258065
+      },
+      {
+        "month": 11,
+        "ndvi": 0.30930807395585347,
+        "soil_moisture": 0.26012750864028933,
+        "rain_mm": 46.7220018029809,
+        "water_balance_mm": 16.471656250036276,
+        "temperature_c": 3.2892
+      },
+      {
+        "month": 12,
+        "ndvi": 0.18790944026470902,
+        "soil_moisture": 0.27469719499349593,
+        "rain_mm": 42.23360075831413,
+        "water_balance_mm": 26.12465026894347,
+        "temperature_c": -2.8
+      }
+    ],
+    "features": {
+      "bare_months": [
+        1,
+        2,
+        3,
+        4,
+        11,
+        12
+      ],
+      "bare_months_label": "Nov\u2013Apr bare in 9 of 10 years (Sentinel-2 NDVI)",
+      "stress_months": [
+        8,
+        9,
+        10
+      ],
+      "stress_months_label": "Growing-season stress months: Aug\u2013Oct",
+      "frost_window_label": "Last spring frost \u2248 DOY 110; first autumn frost \u2248 DOY 296",
+      "frost_free_days": 186.0,
+      "gdd_annual": 1793.9527272727273,
+      "heat_days_trend": "\u2248 4.8 heat days/year (Tmax > 35 \u00b0C)",
+      "rain_annual_mm": 886.3998512284866,
+      "rain_cv": 0.2627722867950252,
+      "slope_pct_mean": 5.840365638868541,
+      "erosion_risk": 0.665743083703161,
+      "water_deficit_annual_mm": -50.008080559988294,
+      "data_coverage_note": "Multi-source monthly field means; NDVI data through September 2026"
+    },
+    "timelapse_url": "demo_iowa_ndvi.gif",
+    "sources_used": [
+      "Sentinel-2 NDVI",
+      "SMAP",
+      "IMERG",
+      "NASA POWER",
+      "ERA5-Land",
+      "GRACE/FO",
+      "SRTM"
+    ],
+    "us_module": null,
+    "cross_checks": {
+      "imerg_vs_power_rain": {
+        "r": 0.9680937556965712,
+        "n_months": 109,
+        "note": "IMERG vs POWER monthly rain"
+      }
+    }
+  },
+  "features_summary": {
+    "bare_months": [
+      1,
+      2,
+      3,
+      4,
+      11,
+      12
+    ],
+    "bare_months_label": "Nov\u2013Apr bare in 9 of 10 years (Sentinel-2 NDVI)",
+    "stress_months": [
+      8,
+      9,
+      10
+    ],
+    "stress_months_label": "Growing-season stress months: Aug\u2013Oct",
+    "frost_window_label": "Last spring frost \u2248 DOY 110; first autumn frost \u2248 DOY 296",
+    "frost_free_days": 186.0,
+    "gdd_annual": 1793.9527272727273,
+    "heat_days_trend": "\u2248 4.8 heat days/year (Tmax > 35 \u00b0C)",
+    "rain_annual_mm": 886.3998512284866,
+    "rain_cv": 0.2627722867950252,
+    "slope_pct_mean": 5.840365638868541,
+    "erosion_risk": 0.665743083703161,
+    "water_deficit_annual_mm": -50.008080559988294,
+    "data_coverage_note": "Multi-source monthly field means; NDVI data through September 2026"
+  },
+  "coverage": {
+    "per_variable": [
+      {
+        "variable": "era5_evap_mm",
+        "unit": "mm/month",
+        "source": "ERA5-Land total_evaporation_sum",
+        "start": "2016-09",
+        "end": "2026-09",
+        "n_valid": 121,
+        "n_gaps": 0,
+        "data_through": "September 2026"
+      },
+      {
+        "variable": "era5_pet_mm",
+        "unit": "mm/month",
+        "source": "ERA5-Land |PET| cross-check only",
+        "start": "2016-09",
+        "end": "2026-09",
+        "n_valid": 121,
+        "n_gaps": 0,
+        "data_through": "September 2026"
+      },
+      {
+        "variable": "era5_precip_mm",
+        "unit": "mm/month",
+        "source": "ERA5-Land total_precipitation_sum",
+        "start": "2016-09",
+        "end": "2026-09",
+        "n_valid": 121,
+        "n_gaps": 0,
+        "data_through": "September 2026"
+      },
+      {
+        "variable": "era5_soil_water",
+        "unit": "m3/m3",
+        "source": "ERA5-Land volumetric_soil_water_layer_1",
+        "start": "2016-09",
+        "end": "2026-09",
+        "n_valid": 121,
+        "n_gaps": 0,
+        "data_through": "September 2026"
+      },
+      {
+        "variable": "era5_t2m_c",
+        "unit": "deg_C",
+        "source": "ERA5-Land temperature_2m",
+        "start": "2016-09",
+        "end": "2026-09",
+        "n_valid": 121,
+        "n_gaps": 0,
+        "data_through": "September 2026"
+      },
+      {
+        "variable": "et0_mm",
+        "unit": "mm/month",
+        "source": "FAO-56 ET0 from NASA POWER (positive)",
+        "start": "2016-09",
+        "end": "2026-09",
+        "n_valid": 121,
+        "n_gaps": 0,
+        "data_through": "September 2026"
+      },
+      {
+        "variable": "grace_lwe_cm",
+        "unit": "cm",
+        "source": "GRACE/FO Mascon CRI lwe_thickness",
+        "start": "2002-04",
+        "end": "2024-09",
+        "n_valid": 227,
+        "n_gaps": 43,
+        "data_through": "September 2024"
+      },
+      {
+        "variable": "ndvi_landsat",
+        "unit": "1",
+        "source": "Landsat 8/9 NDVI",
+        "start": "2016-09",
+        "end": "2026-09",
+        "n_valid": 115,
+        "n_gaps": 6,
+        "data_through": "September 2026"
+      },
+      {
+        "variable": "ndvi_modis",
+        "unit": "1",
+        "source": "MODIS MOD13Q1 NDVI",
+        "start": "2016-09",
+        "end": "2026-09",
+        "n_valid": 121,
+        "n_gaps": 0,
+        "data_through": "September 2026"
+      },
+      {
+        "variable": "ndvi_s2",
+        "unit": "1",
+        "source": "Sentinel-2 NDVI",
+        "start": "2016-09",
+        "end": "2026-09",
+        "n_valid": 120,
+        "n_gaps": 1,
+        "data_through": "September 2026"
+      },
+      {
+        "variable": "power_rain_mm",
+        "unit": "mm/month",
+        "source": "NASA POWER PRECTOTCORR",
+        "start": "2016-09",
+        "end": "2026-09",
+        "n_valid": 121,
+        "n_gaps": 0,
+        "data_through": "September 2026"
+      },
+      {
+        "variable": "power_rh2m_pct",
+        "unit": "percent",
+        "source": "NASA POWER RH2M",
+        "start": "2016-09",
+        "end": "2026-09",
+        "n_valid": 121,
+        "n_gaps": 0,
+        "data_through": "September 2026"
+      },
+      {
+        "variable": "power_srad",
+        "unit": "MJ/m2/day",
+        "source": "NASA POWER ALLSKY_SFC_SW_DWN",
+        "start": "2016-09",
+        "end": "2026-09",
+        "n_valid": 121,
+        "n_gaps": 0,
+        "data_through": "September 2026"
+      },
+      {
+        "variable": "power_t2m_c",
+        "unit": "deg_C",
+        "source": "NASA POWER T2M (mean)",
+        "start": "2016-09",
+        "end": "2026-09",
+        "n_valid": 121,
+        "n_gaps": 0,
+        "data_through": "September 2026"
+      },
+      {
+        "variable": "power_t2m_max_c",
+        "unit": "deg_C",
+        "source": "NASA POWER mean of daily T2M_MAX",
+        "start": "2016-09",
+        "end": "2026-09",
+        "n_valid": 121,
+        "n_gaps": 0,
+        "data_through": "September 2026"
+      },
+      {
+        "variable": "power_t2m_min_c",
+        "unit": "deg_C",
+        "source": "NASA POWER mean of daily T2M_MIN",
+        "start": "2016-09",
+        "end": "2026-09",
+        "n_valid": 121,
+        "n_gaps": 0,
+        "data_through": "September 2026"
+      },
+      {
+        "variable": "rain_best_mm",
+        "unit": "mm/month",
+        "source": "GPM IMERG V07 monthly",
+        "start": "2016-09",
+        "end": "2026-09",
+        "n_valid": 121,
+        "n_gaps": 0,
+        "data_through": "September 2026"
+      },
+      {
+        "variable": "rain_mm",
+        "unit": "mm/month",
+        "source": "GPM IMERG V07 monthly",
+        "start": "2016-09",
+        "end": "2025-09",
+        "n_valid": 109,
+        "n_gaps": 0,
+        "data_through": "September 2025"
+      },
+      {
+        "variable": "sm_rootzone",
+        "unit": "m3/m3",
+        "source": "SMAP L4 sm_rootzone",
+        "start": "2016-09",
+        "end": "2026-09",
+        "n_valid": 121,
+        "n_gaps": 0,
+        "data_through": "September 2026"
+      },
+      {
+        "variable": "sm_surface",
+        "unit": "m3/m3",
+        "source": "SMAP L4 sm_surface",
+        "start": "2016-09",
+        "end": "2026-09",
+        "n_valid": 121,
+        "n_gaps": 0,
+        "data_through": "September 2026"
+      },
+      {
+        "variable": "water_balance_mm",
+        "unit": "mm/month",
+        "source": "rain_best \u2212 FAO-56 ET0",
+        "start": "2016-09",
+        "end": "2026-09",
+        "n_valid": 121,
+        "n_gaps": 0,
+        "data_through": "September 2026"
+      }
+    ],
+    "grace_trend": {
+      "trend_cm_per_yr": -0.1717241629112334,
+      "se_cm_per_yr": 0.08465378361139607,
+      "n": 227,
+      "start_year": 2002,
+      "end_year": 2024,
+      "detail": "-0.2 \u00b1 0.1 cm/yr (2002\u20132024, GRACE/GRACE-FO, deseasonalized)"
+    },
+    "phenology": {
+      "detail": "Seasons detected from Sentinel-2 NDVI: summer May\u2013Oct (peak 0.65); fallow Nov\u2013Apr",
+      "pattern": "summer",
+      "fallow_months": [
+        1,
+        2,
+        3,
+        4,
+        11,
+        12
+      ],
+      "n_seasons": 1
+    },
+    "feature_data_gaps": [
+      "NDVI did not confirm calendar-derived fallow window [1, 2, 3, 4, 10, 11, 12]"
+    ]
+  },
+  "data_through": {
+    "era5_evap_mm": "September 2026",
+    "era5_pet_mm": "September 2026",
+    "era5_precip_mm": "September 2026",
+    "era5_soil_water": "September 2026",
+    "era5_t2m_c": "September 2026",
+    "et0_mm": "September 2026",
+    "grace_lwe_cm": "September 2024",
+    "ndvi_landsat": "September 2026",
+    "ndvi_modis": "September 2026",
+    "ndvi_s2": "September 2026",
+    "power_rain_mm": "September 2026",
+    "power_rh2m_pct": "September 2026",
+    "power_srad": "September 2026",
+    "power_t2m_c": "September 2026",
+    "power_t2m_max_c": "September 2026",
+    "power_t2m_min_c": "September 2026",
+    "rain_best_mm": "September 2026",
+    "rain_mm": "September 2025",
+    "sm_rootzone": "September 2026",
+    "sm_surface": "September 2026",
+    "water_balance_mm": "September 2026"
+  },
+  "cross_checks": {
+    "imerg_vs_power_rain": {
+      "r": 0.9680937556965712,
+      "n_months": 109,
+      "note": "IMERG vs POWER monthly rain"
+    }
+  },
+  "anomalies": {
+    "n_growing": null,
+    "n_off_season": null,
+    "uncertainty": "IsolationForest (contamination=0.08, years=11) flags unusual patterns, not causes. Growing-season flags = crop vulnerability; winter/off-season flags are separate.",
+    "vulnerable_seasons": [
+      {
+        "calendar_month": 6,
+        "n_flags": 2
+      },
+      {
+        "calendar_month": 8,
+        "n_flags": 2
+      }
+    ]
+  },
+  "default_request": {
+    "current_rotation": [
+      "maize",
+      "soybean"
+    ],
+    "soil_type": "unknown",
+    "water_access": "rainfed",
+    "livestock": false,
+    "weights": {
+      "water": 1.0,
+      "soil_health": 1.0,
+      "erosion": 1.0,
+      "pest_break": 1.0,
+      "climate_fit": 1.0,
+      "income": 1.0
+    },
+    "scenario": {
+      "rain_mult": 1.0,
+      "temp_offset": 0.0
+    }
+  },
+  "default_strategies": {
+    "field_id": "iowa",
+    "strategies": [
+      {
+        "id": "current_plus_cover",
+        "name": "Maize / corn \u2192 Soybean \u2192 Cereal rye (cover crop)",
+        "sequence": [
+          {
+            "crop_id": "maize",
+            "months": "summer May\u2013Oct"
+          },
+          {
+            "crop_id": "soybean",
+            "months": "summer May\u2013Oct"
+          },
+          {
+            "crop_id": "cereal_rye_cover",
+            "months": "Oct\u2013Apr"
+          }
+        ],
+        "scores": {
+          "water": 0.5904200220372646,
+          "soil_health": 0.5616666666666666,
+          "erosion": 0.43039714067430745,
+          "pest_break": 0.6666666666666666,
+          "climate_fit": 0.637060098444472,
+          "income": 0.85,
+          "total": 0.6227017657482296
+        },
+        "delta_vs_current": {
+          "total": 0.0094
+        },
+        "why": "Nov\u2013Apr bare in 9 of 10 years (Sentinel-2 NDVI) Year-to-year rain variability is high (CV=0.26).",
+        "evidence": [
+          {
+            "text": "Seasons detected from Sentinel-2 NDVI: summer May\u2013Oct (peak 0.65); fallow Nov\u2013Apr",
+            "source": "Sentinel-2 NDVI",
+            "data_through": "September 2026"
+          },
+          {
+            "text": "Nov\u2013Apr bare in 9 of 10 years (Sentinel-2 NDVI)",
+            "source": "Sentinel-2 NDVI",
+            "data_through": "September 2026"
+          },
+          {
+            "text": "Mean annual rain_best \u2248 886 mm (2016-09 \u2192 2026-09)",
+            "source": "rain_best (POWER recent / IMERG long record)",
+            "data_through": "September 2026"
+          },
+          {
+            "text": "-0.2 \u00b1 0.1 cm/yr (2002\u20132024, GRACE/GRACE-FO, deseasonalized)",
+            "source": "GRACE/FO Mascon CRI (deseasonalized)",
+            "data_through": "September 2024"
+          },
+          {
+            "text": "Frost-free period \u2248 186 days",
+            "source": "NASA POWER T2M_MIN",
+            "data_through": "September 2026"
+          },
+          {
+            "text": "Erosion risk index \u2248 0.67 (0\u20131)",
+            "source": "SRTM slope + rain extremes + bare months",
+            "data_through": null
+          },
+          {
+            "text": "Growing-season anomaly: calendar month 6 (2 times)",
+            "source": "IsolationForest SI",
+            "data_through": "September 2026"
+          }
+        ],
+        "benefits": [
+          "Includes a nitrogen-fixing crop",
+          "Winter/off-season ground cover",
+          "More than one plant family in the rotation"
+        ],
+        "data_gaps": [
+          "NDVI did not confirm calendar-derived fallow window [1, 2, 3, 4, 10, 11, 12]",
+          "grace_lwe_cm: 43 gap months (data through September 2024)",
+          "ndvi_s2: 1 gap months (data through September 2026)",
+          "IsolationForest (contamination=0.08, years=11) flags unusual patterns, not causes. Growing-season flags = crop vulnerability; winter/off-season flags are separate."
+        ],
+        "risks_for_local_review": [
+          "Check local seed availability and herbicide carryover",
+          "Confirm planting windows with a local agronomist",
+          "Crop parameter values need local expert review"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "id": "current",
+        "name": "Maize / corn \u2192 Soybean",
+        "sequence": [
+          {
+            "crop_id": "maize",
+            "months": "summer May\u2013Oct"
+          },
+          {
+            "crop_id": "soybean",
+            "months": "summer May\u2013Oct"
+          }
+        ],
+        "scores": {
+          "water": 0.5904200220372646,
+          "soil_health": 0.54875,
+          "erosion": 0.37534634361131464,
+          "pest_break": 0.6666666666666666,
+          "climate_fit": 0.5988844218007559,
+          "income": 0.9,
+          "total": 0.6133445756860003
+        },
+        "delta_vs_current": {
+          "total": 0.0
+        },
+        "why": "Nov\u2013Apr bare in 9 of 10 years (Sentinel-2 NDVI) Year-to-year rain variability is high (CV=0.26).",
+        "evidence": [
+          {
+            "text": "Seasons detected from Sentinel-2 NDVI: summer May\u2013Oct (peak 0.65); fallow Nov\u2013Apr",
+            "source": "Sentinel-2 NDVI",
+            "data_through": "September 2026"
+          },
+          {
+            "text": "Nov\u2013Apr bare in 9 of 10 years (Sentinel-2 NDVI)",
+            "source": "Sentinel-2 NDVI",
+            "data_through": "September 2026"
+          },
+          {
+            "text": "Mean annual rain_best \u2248 886 mm (2016-09 \u2192 2026-09)",
+            "source": "rain_best (POWER recent / IMERG long record)",
+            "data_through": "September 2026"
+          },
+          {
+            "text": "-0.2 \u00b1 0.1 cm/yr (2002\u20132024, GRACE/GRACE-FO, deseasonalized)",
+            "source": "GRACE/FO Mascon CRI (deseasonalized)",
+            "data_through": "September 2024"
+          },
+          {
+            "text": "Frost-free period \u2248 186 days",
+            "source": "NASA POWER T2M_MIN",
+            "data_through": "September 2026"
+          },
+          {
+            "text": "Erosion risk index \u2248 0.67 (0\u20131)",
+            "source": "SRTM slope + rain extremes + bare months",
+            "data_through": null
+          },
+          {
+            "text": "Growing-season anomaly: calendar month 6 (2 times)",
+            "source": "IsolationForest SI",
+            "data_through": "September 2026"
+          }
+        ],
+        "benefits": [
+          "Includes a nitrogen-fixing crop",
+          "More than one plant family in the rotation"
+        ],
+        "data_gaps": [
+          "NDVI did not confirm calendar-derived fallow window [1, 2, 3, 4, 10, 11, 12]",
+          "grace_lwe_cm: 43 gap months (data through September 2024)",
+          "ndvi_s2: 1 gap months (data through September 2026)",
+          "IsolationForest (contamination=0.08, years=11) flags unusual patterns, not causes. Growing-season flags = crop vulnerability; winter/off-season flags are separate."
+        ],
+        "risks_for_local_review": [
+          "Check local seed availability and herbicide carryover",
+          "Confirm planting windows with a local agronomist",
+          "Crop parameter values need local expert review"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "id": "forage_legume",
+        "name": "Maize / corn \u2192 Soybean \u2192 Alfalfa",
+        "sequence": [
+          {
+            "crop_id": "maize",
+            "months": "summer May\u2013Oct"
+          },
+          {
+            "crop_id": "soybean",
+            "months": "summer May\u2013Oct"
+          },
+          {
+            "crop_id": "alfalfa",
+            "months": "Apr\u2013Oct"
+          }
+        ],
+        "scores": {
+          "water": 0.6260063536400207,
+          "soil_health": 0.645,
+          "erosion": 0.43039714067430745,
+          "pest_break": 0.5166666666666666,
+          "climate_fit": 0.6252866025840446,
+          "income": 0.7999999999999999,
+          "total": 0.6072261272608399
+        },
+        "delta_vs_current": {
+          "total": -0.0061
+        },
+        "why": "Nov\u2013Apr bare in 9 of 10 years (Sentinel-2 NDVI) Year-to-year rain variability is high (CV=0.26).",
+        "evidence": [
+          {
+            "text": "Seasons detected from Sentinel-2 NDVI: summer May\u2013Oct (peak 0.65); fallow Nov\u2013Apr",
+            "source": "Sentinel-2 NDVI",
+            "data_through": "September 2026"
+          },
+          {
+            "text": "Nov\u2013Apr bare in 9 of 10 years (Sentinel-2 NDVI)",
+            "source": "Sentinel-2 NDVI",
+            "data_through": "September 2026"
+          },
+          {
+            "text": "Mean annual rain_best \u2248 886 mm (2016-09 \u2192 2026-09)",
+            "source": "rain_best (POWER recent / IMERG long record)",
+            "data_through": "September 2026"
+          },
+          {
+            "text": "-0.2 \u00b1 0.1 cm/yr (2002\u20132024, GRACE/GRACE-FO, deseasonalized)",
+            "source": "GRACE/FO Mascon CRI (deseasonalized)",
+            "data_through": "September 2024"
+          },
+          {
+            "text": "Frost-free period \u2248 186 days",
+            "source": "NASA POWER T2M_MIN",
+            "data_through": "September 2026"
+          },
+          {
+            "text": "Erosion risk index \u2248 0.67 (0\u20131)",
+            "source": "SRTM slope + rain extremes + bare months",
+            "data_through": null
+          },
+          {
+            "text": "Growing-season anomaly: calendar month 6 (2 times)",
+            "source": "IsolationForest SI",
+            "data_through": "September 2026"
+          }
+        ],
+        "benefits": [
+          "Includes a nitrogen-fixing crop",
+          "More than one plant family in the rotation"
+        ],
+        "data_gaps": [
+          "NDVI did not confirm calendar-derived fallow window [1, 2, 3, 4, 10, 11, 12]",
+          "grace_lwe_cm: 43 gap months (data through September 2024)",
+          "ndvi_s2: 1 gap months (data through September 2026)",
+          "IsolationForest (contamination=0.08, years=11) flags unusual patterns, not causes. Growing-season flags = crop vulnerability; winter/off-season flags are separate."
+        ],
+        "risks_for_local_review": [
+          "Check local seed availability and herbicide carryover",
+          "Confirm planting windows with a local agronomist",
+          "Crop parameter values need local expert review"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "id": "diversified_3yr",
+        "name": "Maize / corn \u2192 Soybean \u2192 Winter wheat \u2192 Cereal rye (cover crop)",
+        "sequence": [
+          {
+            "crop_id": "maize",
+            "months": "summer May\u2013Oct"
+          },
+          {
+            "crop_id": "soybean",
+            "months": "summer May\u2013Oct"
+          },
+          {
+            "crop_id": "winter_wheat",
+            "months": "Sep\u2013Jul"
+          },
+          {
+            "crop_id": "cereal_rye_cover",
+            "months": "Oct\u2013Apr"
+          }
+        ],
+        "scores": {
+          "water": 0.6257491024960751,
+          "soil_health": 0.5308333333333333,
+          "erosion": 0.4278948317168987,
+          "pest_break": 0.35,
+          "climate_fit": 0.6473773332929568,
+          "income": 0.7499999999999999,
+          "total": 0.5553091001398772
+        },
+        "delta_vs_current": {
+          "total": -0.058
+        },
+        "why": "Nov\u2013Apr bare in 9 of 10 years (Sentinel-2 NDVI) Year-to-year rain variability is high (CV=0.26).",
+        "evidence": [
+          {
+            "text": "Seasons detected from Sentinel-2 NDVI: summer May\u2013Oct (peak 0.65); fallow Nov\u2013Apr",
+            "source": "Sentinel-2 NDVI",
+            "data_through": "September 2026"
+          },
+          {
+            "text": "Nov\u2013Apr bare in 9 of 10 years (Sentinel-2 NDVI)",
+            "source": "Sentinel-2 NDVI",
+            "data_through": "September 2026"
+          },
+          {
+            "text": "Mean annual rain_best \u2248 886 mm (2016-09 \u2192 2026-09)",
+            "source": "rain_best (POWER recent / IMERG long record)",
+            "data_through": "September 2026"
+          },
+          {
+            "text": "-0.2 \u00b1 0.1 cm/yr (2002\u20132024, GRACE/GRACE-FO, deseasonalized)",
+            "source": "GRACE/FO Mascon CRI (deseasonalized)",
+            "data_through": "September 2024"
+          },
+          {
+            "text": "Frost-free period \u2248 186 days",
+            "source": "NASA POWER T2M_MIN",
+            "data_through": "September 2026"
+          },
+          {
+            "text": "Erosion risk index \u2248 0.67 (0\u20131)",
+            "source": "SRTM slope + rain extremes + bare months",
+            "data_through": null
+          },
+          {
+            "text": "Growing-season anomaly: calendar month 6 (2 times)",
+            "source": "IsolationForest SI",
+            "data_through": "September 2026"
+          }
+        ],
+        "benefits": [
+          "Includes a nitrogen-fixing crop",
+          "Winter/off-season ground cover",
+          "More than one plant family in the rotation"
+        ],
+        "data_gaps": [
+          "NDVI did not confirm calendar-derived fallow window [1, 2, 3, 4, 10, 11, 12]",
+          "grace_lwe_cm: 43 gap months (data through September 2024)",
+          "ndvi_s2: 1 gap months (data through September 2026)",
+          "IsolationForest (contamination=0.08, years=11) flags unusual patterns, not causes. Growing-season flags = crop vulnerability; winter/off-season flags are separate."
+        ],
+        "risks_for_local_review": [
+          "Check local seed availability and herbicide carryover",
+          "Confirm planting windows with a local agronomist",
+          "Crop parameter values need local expert review"
+        ],
+        "confidence": "medium"
+      }
+    ]
+  },
+  "timelapse": {
+    "ndvi": "demo_iowa_ndvi.gif",
+    "rgb": "demo_iowa_rgb.gif"
+  },
+  "extract_meta": {
+    "start": "2016-09-01",
+    "end": "2026-09-01",
+    "grace_start": null,
+    "grace_end": "2024-09-01",
+    "et0_method": "hargreaves_samani",
+    "elapsed_s": 68.32645587499428
+  }
+}

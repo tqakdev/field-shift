@@ -9,6 +9,29 @@ from fieldshift.engine.scoring import grace_groundwater_penalty
 from fieldshift.models import EvidenceItem, ScoreSet
 
 
+def _data_through_for(
+    features: dict[str, Any], *variable_keys: str
+) -> str | None:
+    """Best data_through label from coverage rows matching variable name fragments."""
+    cov = features.get("data_coverage", {}).get("per_variable") or []
+    for key in variable_keys:
+        for row in cov:
+            var = str(row.get("variable") or "")
+            if key in var and row.get("data_through"):
+                return str(row["data_through"])
+    # Fall back to rain_best period end
+    period = (features.get("rain") or {}).get("period")
+    if period and "→" in str(period):
+        end = str(period).split("→")[-1].strip()
+        try:
+            import pandas as pd
+
+            return pd.Timestamp(str(end) + "-01").strftime("%B %Y")
+        except Exception:
+            return end
+    return None
+
+
 def explain_strategy(
     strategy: dict[str, Any],
     features: dict[str, Any],
@@ -41,19 +64,35 @@ def explain_strategy(
     why = " ".join(why_bits[:2])
 
     evidence: list[EvidenceItem] = []
+    ndvi_through = _data_through_for(features, "ndvi_s2", "ndvi_modis")
+    rain_through = _data_through_for(features, "rain_best", "rain_mm", "power_rain")
+    grace_through = _data_through_for(features, "grace_lwe")
+    power_through = _data_through_for(features, "power_t2m", "power_t2m_min")
+
     if phenology.get("n_seasons", 0) > 0 and phenology.get("detail"):
         evidence.append(
             EvidenceItem(
                 text=str(phenology["detail"]),
                 source=str(phenology.get("source") or "NDVI"),
+                data_through=ndvi_through,
             )
         )
     elif bare.get("evidence_line"):
         evidence.append(
-            EvidenceItem(text=str(bare["evidence_line"]), source="Sentinel-2/MODIS NDVI")
+            EvidenceItem(
+                text=str(bare["evidence_line"]),
+                source="Sentinel-2/MODIS NDVI",
+                data_through=ndvi_through,
+            )
         )
     if bare.get("detail") and bare.get("ndvi_confirmed_ok"):
-        evidence.append(EvidenceItem(text=str(bare["detail"]), source="Sentinel-2 NDVI"))
+        evidence.append(
+            EvidenceItem(
+                text=str(bare["detail"]),
+                source="Sentinel-2 NDVI",
+                data_through=ndvi_through,
+            )
+        )
     if rain.get("rain_annual_mm") is not None:
         src = rain.get("source") or "rain_best"
         period = rain.get("period") or ""
@@ -64,6 +103,7 @@ def explain_strategy(
                     + (f" ({period})" if period else "")
                 ),
                 source=str(src),
+                data_through=rain_through,
             )
         )
     grace = features.get("grace_trend") or {}
@@ -72,6 +112,12 @@ def explain_strategy(
             EvidenceItem(
                 text=str(grace["detail"]),
                 source="GRACE/FO Mascon CRI (deseasonalized)",
+                data_through=grace_through
+                or (
+                    f"{grace.get('end_year')}"
+                    if grace.get("end_year")
+                    else None
+                ),
             )
         )
         _ = grace_groundwater_penalty(features)
@@ -79,10 +125,9 @@ def explain_strategy(
         trend = float(features["grace_trend_cm_per_yr"])
         evidence.append(
             EvidenceItem(
-                text=(
-                    f"Regional water storage trend {trend:.1f} cm/yr (GRACE-FO)"
-                ),
+                text=f"Regional water storage trend {trend:.1f} cm/yr (GRACE-FO)",
                 source="GRACE/FO Mascon CRI",
+                data_through=grace_through,
             )
         )
     if frost.get("frost_free_days") is not None:
@@ -90,6 +135,7 @@ def explain_strategy(
             EvidenceItem(
                 text=f"Frost-free period ≈ {frost['frost_free_days']:.0f} days",
                 source="NASA POWER T2M_MIN",
+                data_through=power_through,
             )
         )
     if erisk is not None:
@@ -108,6 +154,7 @@ def explain_strategy(
                     f"({top['n_flags']} times)"
                 ),
                 source="IsolationForest SI",
+                data_through=ndvi_through,
             )
         )
     if not evidence:

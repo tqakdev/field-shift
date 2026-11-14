@@ -36,6 +36,7 @@ class EvidenceItem(BaseModel):
 
     text: str
     source: str
+    data_through: str | None = None
 
 
 class ScoreSet(BaseModel):

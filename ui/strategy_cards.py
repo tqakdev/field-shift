@@ -50,24 +50,24 @@ def render_strategy_cards(cards: list[StrategyCard]) -> None:
             delta = card.delta_vs_current.get("total")
             st.metric(
                 "Total score",
-                f"{card.scores.total:.1f}",
-                delta=(f"{delta:+.1f} vs current" if delta is not None else None),
+                f"{card.scores.total:.2f}",
+                delta=(f"{delta:+.2f} vs current" if delta is not None else None),
             )
-            source_caption("MOCK / scoring engine")
+            source_caption("Field Shift scoring engine")
 
             st.plotly_chart(
                 scores_bar(card.scores),
                 use_container_width=True,
                 key=f"scores-{card.id}",
             )
-            source_caption("MOCK / criterion scores")
+            source_caption("criterion scores (0–1)")
 
             st.write(card.why)
 
             with st.expander("Evidence"):
                 for item in card.evidence:
                     st.write(f"• {item.text}")
-                    source_caption(item.source)
+                    source_caption(item.source, getattr(item, "data_through", None))
             with st.expander("Benefits"):
                 for b in card.benefits:
                     st.write(f"• {b}")
