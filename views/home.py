@@ -11,7 +11,7 @@ from fieldshift.data.ee_client import init_ee
 from fieldshift.models import FieldConditions
 from fieldshift.services import analyze_field, list_demo_fields, using_mock_data
 from streamlit_folium import st_folium
-from ui.components import demo_field_card, hero, section
+from ui.components import demo_field_cards, hero, section
 from ui.map import field_map
 from ui.mock_banner import show_mock_banner
 
@@ -47,25 +47,28 @@ section(
     "Three contrasting farms pre-loaded from NASA / ESA / USGS archives.",
 )
 fields = list_demo_fields()
-cols = st.columns(min(3, max(1, len(fields))), gap="medium")
-for col, field in zip(cols, fields, strict=False):
-    with col:
-        thumb = CACHE_DIR / f"demo_{field.id}_ndvi_thumb.png"
-        if not thumb.exists():
-            thumb = CACHE_DIR / f"demo_{field.id}_ndvi.gif"
-        opened = demo_field_card(
-            name=field.name,
-            climate=field.climate_label,
-            country=field.country,
-            rotation=_ROTATION_LABEL.get(field.id, "—"),
-            thumb_path=str(thumb) if thumb.exists() else None,
-            button_key=f"demo-{field.id}",
-        )
-        if opened:
-            st.session_state["field_id"] = field.id
-            st.session_state["field_polygon"] = field.polygon
-            st.session_state.pop("custom_conditions", None)
-            st.switch_page("views/field.py")
+card_payload = []
+for field in fields:
+    thumb = CACHE_DIR / f"demo_{field.id}_ndvi_thumb.png"
+    if not thumb.exists():
+        thumb = CACHE_DIR / f"demo_{field.id}_ndvi.gif"
+    card_payload.append(
+        {
+            "id": field.id,
+            "name": field.name,
+            "climate": field.climate_label,
+            "country": field.country,
+            "rotation": _ROTATION_LABEL.get(field.id, "—"),
+            "thumb_path": str(thumb) if thumb.exists() else None,
+        }
+    )
+opened_id = demo_field_cards(card_payload)
+if opened_id:
+    field = next(f for f in fields if f.id == opened_id)
+    st.session_state["field_id"] = field.id
+    st.session_state["field_polygon"] = field.polygon
+    st.session_state.pop("custom_conditions", None)
+    st.switch_page("views/field.py")
 
 section(
     "Analyze my own field",

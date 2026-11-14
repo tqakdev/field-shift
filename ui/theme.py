@@ -30,7 +30,7 @@ SCORE_COLORS = {
     "income": "#6B5B3E",
 }
 
-_THEME_VERSION = "nasa-v4"
+_THEME_VERSION = "nasa-v5"
 
 
 def inject_theme() -> None:
@@ -308,17 +308,98 @@ div[data-testid="stMetricLabel"] {{
   color: {MUTED} !important;
 }}
 
-/* Primary buttons */
+/* Primary buttons — white label on NASA blue (high contrast) */
 .stButton > button[kind="primary"],
-.stButton > button[data-testid="baseButton-primary"] {{
-  background: {NASA_BLUE} !important;
+.stButton > button[data-testid="baseButton-primary"],
+button[kind="primary"],
+button[data-testid="baseButton-primary"] {{
+  background-color: {NASA_BLUE} !important;
+  background-image: none !important;
   border: 1px solid {NASA_BLUE} !important;
   border-radius: 2px !important;
   font-weight: 600 !important;
   letter-spacing: 0.02em;
+  color: #FFFFFF !important;
 }}
-.stButton > button[kind="primary"]:hover {{
-  background: {NASA_BLUE_MID} !important;
+.stButton > button[kind="primary"] *,
+.stButton > button[data-testid="baseButton-primary"] *,
+button[kind="primary"] *,
+button[data-testid="baseButton-primary"] * {{
+  color: #FFFFFF !important;
+  fill: #FFFFFF !important;
+}}
+.stButton > button[kind="primary"]:hover,
+.stButton > button[data-testid="baseButton-primary"]:hover,
+button[kind="primary"]:hover {{
+  background-color: {NASA_BLUE_MID} !important;
+  color: #FFFFFF !important;
+  border-color: {NASA_BLUE_MID} !important;
+}}
+
+/* Equal-height demo field cards */
+.fs-demo-grid {{
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin: 0.5rem 0 1.25rem 0;
+}}
+.fs-demo-card {{
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 100%;
+  border: 1px solid {HAIRLINE};
+  border-radius: 2px;
+  background: {PAPER};
+  overflow: hidden;
+}}
+.fs-demo-card img {{
+  width: 100%;
+  aspect-ratio: 5 / 4;
+  object-fit: cover;
+  display: block;
+  border-bottom: 1px solid {HAIRLINE};
+}}
+.fs-demo-card-body {{
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 0.85rem 0.9rem 0.95rem;
+  gap: 0.25rem;
+}}
+.fs-demo-card-title {{
+  font-weight: 600;
+  font-size: 1.02rem;
+  color: {INK};
+  margin: 0;
+  line-height: 1.3;
+  min-height: 2.6em;
+}}
+.fs-demo-card-meta {{
+  color: {MUTED};
+  font-size: 0.85rem;
+  margin: 0;
+  line-height: 1.35;
+  min-height: 2.7em;
+}}
+.fs-demo-card-rot {{
+  color: {INK};
+  font-size: 0.85rem;
+  margin: 0 0 0.65rem 0;
+  font-family: "IBM Plex Mono", monospace;
+}}
+.fs-demo-card-spacer {{
+  flex: 1 1 auto;
+}}
+.fs-demo-copy {{
+  min-height: 7.2rem;
+  margin: 0.35rem 0 0.15rem 0;
+}}
+.fs-demo-copy .fs-demo-card-title {{
+  margin-bottom: 0.2rem;
+}}
+.fs-demo-copy .fs-demo-card-meta {{
+  margin-bottom: 0.35rem;
 }}
 
 div[data-testid="stSlider"] label {{

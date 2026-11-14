@@ -37,7 +37,6 @@ def hero(
 
 def section(title: str, subtitle: str | None = None, *, step: int | None = None) -> None:
     """Numbered section header with optional subtitle."""
-    # Strip leading emoji for a cleaner NASA look; keep text.
     clean = title.lstrip()
     step_html = (
         f'<span class="fs-step">{step:02d}</span>&nbsp;' if step is not None else ""
@@ -144,28 +143,78 @@ def weights_bar(weights: dict[str, float]) -> None:
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 
-def demo_field_card(
-    *,
-    name: str,
-    climate: str,
-    country: str,
-    rotation: str,
-    thumb_path: str | None,
-    button_key: str,
-) -> bool:
-    """Home-page demo picker card. Returns True if Open clicked."""
-    with st.container(border=True):
-        if thumb_path:
-            st.image(thumb_path, use_container_width=True)
-        st.markdown(f"**{name}**")
-        st.caption(f"{climate} · {country}")
-        st.caption(f"Rotation · {rotation}")
-        return st.button(
-            "Open field report",
-            key=button_key,
-            use_container_width=True,
-            type="primary",
-        )
+def demo_field_cards(
+    cards: list[dict[str, Any]],
+) -> str | None:
+    """Render equal-height demo cards; return clicked field id or None.
+
+    Each card dict: id, name, climate, country, rotation, thumb_path.
+    Layout uses aligned rows (thumbs → copy → buttons) so buttons share a baseline.
+    """
+    if not cards:
+        return None
+
+    n = len(cards)
+    # Row 1 — thumbnails (fixed aspect)
+    cols = st.columns(n, gap="medium")
+    for col, card in zip(cols, cards, strict=True):
+        with col:
+            thumb = card.get("thumb_path")
+            if thumb:
+                st.image(thumb, use_container_width=True)
+            else:
+                st.markdown(
+                    '<div style="aspect-ratio:5/4;background:#EEF2F7;'
+                    'border:1px solid #D5DCE6;"></div>',
+                    unsafe_allow_html=True,
+                )
+
+    # Row 2 — copy with equal min-heights via CSS classes
+    cols = st.columns(n, gap="medium")
+    for col, card in zip(cols, cards, strict=True):
+        with col:
+            st.markdown(
+                f"""
+<div class="fs-demo-copy">
+  <p class="fs-demo-card-title">{card["name"]}</p>
+  <p class="fs-demo-card-meta">{card["climate"]} · {card["country"]}</p>
+  <p class="fs-demo-card-rot">Rotation · {card["rotation"]}</p>
+</div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+    # Row 3 — buttons on one baseline
+    clicked: str | None = None
+    cols = st.columns(n, gap="medium")
+    for col, card in zip(cols, cards, strict=True):
+        with col:
+            if st.button(
+                "Open field report",
+                key=f"demo-{card['id']}",
+                use_container_width=True,
+                type="primary",
+            ):
+                clicked = card["id"]
+    return clicked
+
+
+# Back-compat alias used nowhere critical
+def demo_field_card(**kwargs: Any) -> bool:
+    """Deprecated single-card helper — prefer demo_field_cards()."""
+    result = demo_field_cards(
+        [
+            {
+                "id": kwargs.get("button_key", "x").replace("demo-", ""),
+                "name": kwargs.get("name", ""),
+                "climate": kwargs.get("climate", ""),
+                "country": kwargs.get("country", ""),
+                "rotation": kwargs.get("rotation", ""),
+                "thumb_path": kwargs.get("thumb_path"),
+            }
+        ]
+    )
+    return result is not None
 
 
 __all__ = [
@@ -175,6 +224,7 @@ __all__ = [
     "SCORE_COLORS",
     "confidence_badge",
     "demo_field_card",
+    "demo_field_cards",
     "fact_chips",
     "hero",
     "recommendation_banner",
