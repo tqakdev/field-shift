@@ -4,6 +4,11 @@
     "name": "Central Iowa (demo)",
     "country": "USA",
     "climate_label": "Humid continental \u2014 maize / soybean",
+    "expected_rotation": [
+      "maize",
+      "soybean"
+    ],
+    "expected_phenology": "summer",
     "notes": "Tight cropland interior (~16 ha); avoids grassed field edges that inflate Nov NDVI.",
     "polygon": {
       "type": "Polygon",
@@ -35,33 +40,37 @@
   },
   {
     "id": "kansas",
-    "name": "Western Kansas (demo)",
+    "name": "South-central Kansas (demo)",
     "country": "USA",
-    "climate_label": "Semi-arid \u2014 wheat",
-    "notes": "Small cropland block (~16 ha) in continuous wheat country.",
+    "climate_label": "Semi-arid \u2014 winter wheat",
+    "expected_rotation": [
+      "winter_wheat"
+    ],
+    "expected_phenology": "winter_wheat",
+    "notes": "Edwards County KS (~20 ha at 38.00,-99.50). CDL winter-wheat dominant; S2 phenology winter Oct\u2013Jun, fallow Jul\u2013Sep.",
     "polygon": {
       "type": "Polygon",
       "coordinates": [
         [
           [
-            -99.305,
-            38.395
+            -99.50254905766582,
+            37.99799131514777
           ],
           [
-            -99.295,
-            38.395
+            -99.49745094233418,
+            37.99799131514777
           ],
           [
-            -99.295,
-            38.403
+            -99.49745094233418,
+            38.00200868485223
           ],
           [
-            -99.305,
-            38.403
+            -99.50254905766582,
+            38.00200868485223
           ],
           [
-            -99.305,
-            38.395
+            -99.50254905766582,
+            37.99799131514777
           ]
         ]
       ]
@@ -72,6 +81,11 @@
     "name": "Punjab (demo)",
     "country": "India",
     "climate_label": "Irrigated subtropical \u2014 rice / wheat",
+    "expected_rotation": [
+      "rice",
+      "winter_wheat"
+    ],
+    "expected_phenology": "rice_wheat",
     "notes": "~40 ha rice\u2013wheat near Ludhiana (point 30.90, 75.80); dual NDVI seasons.",
     "polygon": {
       "type": "Polygon",

@@ -29,6 +29,8 @@ CROP_KC: dict[str, float] = {
     "radish_cover": 0.80,
     "cotton": 1.15,
     "rice": 1.20,
+    "mung_bean": 0.95,
+    "pigeon_pea": 0.95,
 }
 
 # Extra flooded-culture / seepage demand beyond Kc×ET0 (mm/season).

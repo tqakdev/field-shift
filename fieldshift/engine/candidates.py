@@ -15,8 +15,34 @@ WATER_WISE_RAIN_CV = 0.30
 WATER_WISE_ANNUAL_DEFICIT_MM = -150.0
 CLIMATE_FIT_MIN = 0.45
 
-GRAIN_LEGUME_IDS = {"soybean", "field_pea", "lentil"}
-WATER_WISE_POOL = ["sorghum", "maize", "millet", "field_pea", "lentil", "soybean"]
+GRAIN_LEGUME_IDS = {
+    "soybean",
+    "field_pea",
+    "lentil",
+    "mung_bean",
+    "pigeon_pea",
+}
+# Warm/kharif-leaning drought swaps (cool legumes filtered by season_compatible).
+WATER_WISE_POOL = [
+    "sorghum",
+    "maize",
+    "millet",
+    "mung_bean",
+    "pigeon_pea",
+    "soybean",
+    "field_pea",
+    "lentil",
+]
+COOL_SEASON_IDS = {
+    "field_pea",
+    "lentil",
+    "winter_wheat",
+    "spring_wheat",
+    "barley",
+    "oats",
+    "canola",
+    "chickpea",
+}
 
 
 def climate_ok(crop: dict[str, Any], features: dict[str, Any], water_access: WaterAccess) -> bool:
@@ -60,6 +86,62 @@ def most_water_demanding(rotation: list[str], features: dict[str, Any]) -> str |
     return ranked[0]
 
 
+def season_months_for_crop(crop_id: str, features: dict[str, Any]) -> list[int]:
+    mapping = features.get("crop_season_map") or {}
+    months = (mapping.get(crop_id) or {}).get("months")
+    if months:
+        return list(months)
+    from fieldshift.engine.calendar import active_months
+
+    return sorted(active_months(crop_id))
+
+
+def season_label_for_crop(crop_id: str, features: dict[str, Any]) -> str | None:
+    mapping = features.get("crop_season_map") or {}
+    return (mapping.get(crop_id) or {}).get("season_label")
+
+
+def season_compatible(
+    replacement_id: str,
+    replaced_id: str,
+    features: dict[str, Any],
+    *,
+    mode: str = "strict",
+) -> bool:
+    """Replacement must fit the *replaced* crop's season window (not annual climate).
+
+    Hard rule: cool-season crops (field pea, lentil, wheat, …) cannot replace a
+    kharif/summer slot (e.g. rice). Fit is scored with heat/GDD/frost/Tmax over
+    the replaced season months.
+
+    ``mode="water_wise"``: allow a warm drought crop to occupy the field's summer
+    fallow window when replacing a winter cereal (system shift to summer cropping).
+    """
+    label = season_label_for_crop(replaced_id, features)
+    months = season_months_for_crop(replaced_id, features)
+    rep = crop_by_id(replacement_id)
+    # Explicit warm-slot gate (Punjab rice)
+    if label in {"kharif", "summer"} and (
+        rep["season"] == "cool" or replacement_id in COOL_SEASON_IDS
+    ):
+        return False
+    if label in {"rabi", "winter"} and rep["season"] == "warm":
+        if mode != "water_wise":
+            return False
+        fallow = list(
+            features.get("bare_months", {}).get("months")
+            or features.get("phenology", {}).get("fallow_months")
+            or [7, 8, 9]
+        )
+        summer_months = sorted(set(fallow) | {5, 6, 7, 8, 9})
+        fit = score_climate_fit(
+            [replacement_id], features, season_months=summer_months
+        )
+        return fit >= CLIMATE_FIT_MIN
+    fit = score_climate_fit([replacement_id], features, season_months=months)
+    return fit >= CLIMATE_FIT_MIN
+
+
 def best_cover_for_bare(features: dict[str, Any], water_access: WaterAccess) -> str | None:
     window = features.get("bare_months", {}).get("months") or []
     covers = [
@@ -90,24 +172,36 @@ def best_legume_for_field(
     Never returns lentil unless it has the strictly highest climate fit among
     legumes that pass the climate gate.
     """
+    rotation = features.get("current_rotation") or []
+    cash_slots = [c for c in rotation if crop_by_id(c)["type"] == "cash"]
     legumes = [
         c
         for c in load_crops()
         if c["nitrogen_fixing"]
         and c["type"] == "cash"
         and climate_ok(c, features, water_access)
+        and any(season_compatible(c["id"], slot, features) for slot in cash_slots)
     ]
     if not legumes:
         return None
     rain = features.get("rain", {}).get("rain_annual_mm") or 800
     rain_cv = features.get("rain", {}).get("rain_cv") or 0.0
     semi_arid = rain < 750 or rain_cv > 0.22
-    rotation = features.get("current_rotation") or []
     wheat_system = any("wheat" in c for c in rotation)
 
     scored: list[tuple[float, str]] = []
     for c in legumes:
-        scored.append((score_climate_fit([c["id"]], features), c["id"]))
+        # Score fit over the best compatible slot's months
+        best_fit = 0.0
+        for slot in cash_slots:
+            if not season_compatible(c["id"], slot, features):
+                continue
+            months = season_months_for_crop(slot, features)
+            best_fit = max(
+                best_fit,
+                score_climate_fit([c["id"]], features, season_months=months),
+            )
+        scored.append((best_fit, c["id"]))
     scored.sort(reverse=True)
     fit_top, top_id = scored[0]
 
@@ -157,11 +251,16 @@ def best_forage_or_cover_legume(
 
 
 def water_wise_replacements(
-    features: dict[str, Any], water_access: WaterAccess, exclude: set[str]
+    features: dict[str, Any],
+    water_access: WaterAccess,
+    exclude: set[str],
+    *,
+    replace_crop: str | None = None,
 ) -> list[str]:
-    """Rank drought-tolerant replacements by climate_fit then income tier.
+    """Rank drought-tolerant replacements by season climate_fit then income tier.
 
     Grain sorghum is boosted in semi-arid / wheat systems so Kansas considers it.
+    Maize and kharif legumes (mung, pigeon pea) are always considered for rice.
     """
     from fieldshift.engine.scoring import MARKET_TIER
 
@@ -169,6 +268,9 @@ def water_wise_replacements(
     rain_cv = features.get("rain", {}).get("rain_cv") or 0.0
     rotation = features.get("current_rotation") or []
     prefer_sorghum = rain < 750 or rain_cv > 0.25 or any("wheat" in c for c in rotation)
+    months = (
+        season_months_for_crop(replace_crop, features) if replace_crop else None
+    )
 
     pool = []
     for cid in WATER_WISE_POOL:
@@ -177,14 +279,42 @@ def water_wise_replacements(
         c = crop_by_id(cid)
         if not climate_ok(c, features, water_access):
             continue
-        fit = score_climate_fit([cid], features)
+        if replace_crop and not season_compatible(
+            cid, replace_crop, features, mode="water_wise"
+        ):
+            continue
+        # Climate fit over replaced season, or summer fallow for warm↔winter water-wise
+        fit_months = months
+        if (
+            replace_crop
+            and season_label_for_crop(replace_crop, features) in {"rabi", "winter"}
+            and c["season"] == "warm"
+        ):
+            fallow = list(
+                features.get("bare_months", {}).get("months")
+                or features.get("phenology", {}).get("fallow_months")
+                or [7, 8, 9]
+            )
+            fit_months = sorted(set(fallow) | {5, 6, 7, 8, 9})
+        fit = score_climate_fit([cid], features, season_months=fit_months)
         if fit < CLIMATE_FIT_MIN:
             continue
-        if float(c["drought_tolerance"]) < 0.45 and cid not in {"maize", "soybean"}:
+        if float(c["drought_tolerance"]) < 0.45 and cid not in {
+            "maize",
+            "soybean",
+            "mung_bean",
+        }:
             continue
         bonus = 0.08 if prefer_sorghum and cid == "sorghum" else 0.0
         if prefer_sorghum and cid == "soybean":
-            bonus -= 0.06  # prefer sorghum/millet/pulses over soybean in wheat country
+            bonus -= 0.06
+        # Tropical kharif pulses belong in South Asia rice systems, not Great Plains wheat
+        frost = features.get("frost_window", {}).get("frost_free_days")
+        if frost is not None and frost < 220 and cid in {"mung_bean", "pigeon_pea"}:
+            continue
+        # Prefer maize as a rice alternative when climate allows
+        if replace_crop == "rice" and cid == "maize":
+            bonus += 0.05
         pool.append(
             (
                 fit + bonus,
@@ -220,7 +350,10 @@ def best_swap_position(
     water_access: WaterAccess,
     weights: PriorityWeights | None = None,
 ) -> list[str]:
-    """Replace the cash crop whose removal most improves weighted total."""
+    """Replace the cash crop whose removal most improves weighted total.
+
+    Only season-compatible slots are considered (cool crop cannot replace kharif rice).
+    """
     weights = weights or PriorityWeights()
     baseline = score_strategy(
         current, features, weights=weights, water_access=water_access
@@ -229,6 +362,8 @@ def best_swap_position(
     best_delta = -1e9
     for i, cid in enumerate(current):
         if crop_by_id(cid)["type"] == "cover":
+            continue
+        if not season_compatible(replacement, cid, features):
             continue
         trial = list(current)
         trial[i] = replacement
@@ -343,7 +478,10 @@ def build_candidates(
     if water_wise_needed(features):
         target = most_water_demanding(current, features)
         replacements = water_wise_replacements(
-            features, water_access, exclude=set(current)
+            features,
+            water_access,
+            exclude=set(current),
+            replace_crop=target,
         )
         # Always replace the most water-demanding crop (e.g. rice in Punjab).
         # Walk climate_fit+income ranked pool; take first that beats current on
@@ -359,6 +497,8 @@ def build_candidates(
             fallback = None
             fallback_w = -1.0
             for rep in replacements:
+                if not season_compatible(rep, target, features, mode="water_wise"):
+                    continue
                 trial = list(current)
                 try:
                     idx = trial.index(target)
@@ -376,7 +516,7 @@ def build_candidates(
                 if w > fallback_w:
                     fallback_w = w
                     fallback = trial
-                if w > baseline_w and t > baseline_t:
+                if w > baseline_w and t >= baseline_t - 0.01:
                     chosen = trial
                     break
             best_trial = chosen or (

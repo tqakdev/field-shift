@@ -18,5 +18,7 @@
   { "id": "hairy_vetch_cover", "name": "Hairy vetch (cover)", "type": "cover", "family": "fabaceae", "season": "cool" },
   { "id": "radish_cover", "name": "Radish (cover)", "type": "cover", "family": "brassicaceae", "season": "cool" },
   { "id": "cotton", "name": "Cotton", "type": "cash", "family": "malvaceae", "season": "warm" },
+  { "id": "mung_bean", "name": "Mung bean", "type": "cash", "family": "fabaceae", "season": "warm" },
+  { "id": "pigeon_pea", "name": "Pigeon pea", "type": "cash", "family": "fabaceae", "season": "warm" },
   { "id": "rice", "name": "Rice", "type": "cash", "family": "poaceae", "season": "warm" }
 ]

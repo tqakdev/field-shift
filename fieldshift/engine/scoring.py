@@ -130,31 +130,60 @@ def score_pest_break(sequence: list[str]) -> float:
     return _clip01(diversity - penalty)
 
 
-def score_climate_fit(sequence: list[str], features: dict[str, Any]) -> float:
+def score_climate_fit(
+    sequence: list[str],
+    features: dict[str, Any],
+    *,
+    season_months: list[int] | None = None,
+) -> float:
     """Climate fit = mean of frost / GDD / heat / drought margins (no GAEZ yet).
+
+    When ``season_months`` is set, heat / GDD / frost / mean Tmax are taken from
+    that window (via ``season_window_climate``), not annual averages — required
+    for season-compatible swap checks (e.g. kharif rice vs cool-season pea).
 
     frost_margin = clip((frost_free − crop.min_frost_free) / max(crop.min_frost_free, 1))
     gdd_margin similarly; heat = crop.heat_tolerance vs normalized heat_days;
     drought = crop.drought_tolerance vs rain_cv.
     Final = mean of available margins (Phase 7 may blend 70% this / 30% GAEZ).
     """
-    frost_free = features.get("frost_window", {}).get("frost_free_days")
-    gdd_mean = features.get("gdd", {}).get("gdd_annual_mean")
-    heat_days = features.get("gdd", {}).get("heat_days_mean") or 0.0
     rain_cv = features.get("rain", {}).get("rain_cv") or 0.2
+    if season_months:
+        from fieldshift.engine.features import season_window_climate
+
+        win = season_window_climate(features.get("daily"), season_months)
+        frost_free = win.get("frost_free_proxy_days")
+        gdd_mean = win.get("gdd_mean")
+        heat_days = win.get("heat_days_mean") or 0.0
+        tmax_mean = win.get("tmax_mean")
+    else:
+        frost_free = features.get("frost_window", {}).get("frost_free_days")
+        gdd_mean = features.get("gdd", {}).get("gdd_annual_mean")
+        heat_days = features.get("gdd", {}).get("heat_days_mean") or 0.0
+        tmax_mean = None
     margins = []
     for cid in sequence:
         c = crop_by_id(cid)
         if frost_free is not None and c["min_frost_free_days"]:
-            margins.append(
-                _clip01((frost_free - c["min_frost_free_days"]) / c["min_frost_free_days"])
-            )
+            # Scale crop frost-free need to season length (~fraction of year)
+            need = float(c["min_frost_free_days"])
+            if season_months:
+                need = need * (len(season_months) / 12.0)
+            margins.append(_clip01((frost_free - need) / max(need, 1.0)))
         elif c["min_frost_free_days"] == 0:
             margins.append(1.0)
         if gdd_mean is not None and c["gdd_required"]:
-            margins.append(_clip01(gdd_mean / float(c["gdd_required"])))
+            need_gdd = float(c["gdd_required"])
+            if season_months:
+                need_gdd = need_gdd * (len(season_months) / 12.0)
+            margins.append(_clip01(gdd_mean / max(need_gdd, 1.0)))
         heat_load = min(1.0, heat_days / 20.0)
         margins.append(_clip01(float(c["heat_tolerance"]) * (1.0 - 0.5 * heat_load)))
+        # Cool-season crops fail hot windows (mean Tmax ≫ 30 °C)
+        if tmax_mean is not None and c["season"] == "cool" and tmax_mean > 32:
+            margins.append(_clip01(float(c["heat_tolerance"]) * 0.2))
+        if tmax_mean is not None and c["season"] == "warm" and tmax_mean < 18:
+            margins.append(0.2)
         margins.append(_clip01(float(c["drought_tolerance"]) * (1.0 - min(1.0, rain_cv))))
     if not margins:
         return 0.5

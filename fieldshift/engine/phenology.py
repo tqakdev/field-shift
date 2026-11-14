@@ -19,6 +19,53 @@ FALLOW_THRESH = 0.35
 # Canonical dual-cropping windows when warm + cool peaks are detected.
 KHARIF_MONTHS = [6, 7, 8, 9, 10]  # Jun–Oct
 RABI_MONTHS = [11, 12, 1, 2, 3, 4]  # Nov–Apr
+# Typical winter-wheat occupancy (emergence → harvest); midsummer is fallow.
+WINTER_WHEAT_MONTHS = [10, 11, 12, 1, 2, 3, 4, 5, 6]
+
+
+def looks_like_winter_wheat(clim: dict[int, float]) -> bool:
+    """Winter wheat: spring green-up, midsummer trough after harvest, optional fall green."""
+    if len(clim) < 6:
+        return False
+    spring = float(np.mean([clim.get(m, 0.0) for m in (3, 4, 5)]))
+    summer = float(np.mean([clim.get(m, 0.0) for m in (7, 8, 9)]))
+    fall = float(np.mean([clim.get(m, 0.0) for m in (10, 11)]))
+    # Not a strong summer crop (Jun–Aug green)
+    jun_aug = float(np.mean([clim.get(m, 0.0) for m in (6, 7, 8)]))
+    return (
+        spring >= 0.32
+        and summer < spring - 0.06
+        and jun_aug < spring
+        and (fall >= 0.28 or spring >= 0.40)
+    )
+
+
+def looks_like_summer_crop(clim: dict[int, float]) -> bool:
+    """Maize/soy-like: peak in Jun–Sep, bare in winter."""
+    if len(clim) < 6:
+        return False
+    summer = float(np.mean([clim.get(m, 0.0) for m in (6, 7, 8, 9)]))
+    winter = float(np.mean([clim.get(m, 0.0) for m in (12, 1, 2)]))
+    return summer >= 0.45 and winter < 0.35 and summer > winter + 0.15
+
+
+def looks_like_rice_wheat(clim: dict[int, float]) -> bool:
+    """Dual peaks: monsoon/kharif (Jun–Sep) and rabi (Dec–Mar) both green.
+
+    Requires a true warm-season peak in Jun–Sep (not May wheat green-up) and a
+    cool-season peak, with a May–Jun trough between them.
+    """
+    if len(clim) < 6:
+        return False
+    warm = max(clim.get(m, 0.0) for m in (6, 7, 8, 9))
+    cool = max(clim.get(m, 0.0) for m in (12, 1, 2, 3))
+    trough = min(clim.get(m, 1.0) for m in (5, 6))
+    return (
+        warm >= FALLOW_THRESH
+        and cool >= FALLOW_THRESH
+        and trough < min(warm, cool) - 0.05
+        and abs(warm - cool) < 0.35
+    )
 
 
 def monthly_ndvi_climatology(ndvi: pd.Series) -> dict[int, float]:
@@ -146,6 +193,42 @@ def detect_seasons_from_ndvi(
         if len(seasons) >= 2:
             break
 
+    # Winter-wheat pattern overrides a false "summer"/dual label (spring peak ≠ maize).
+    if looks_like_winter_wheat(clim):
+        peak = max((3, 4, 5), key=lambda m: clim.get(m, 0.0))
+        fallow_months = sorted(
+            m
+            for m in (7, 8, 9)
+            if clim.get(m, 1.0) < max(fallow_thresh + 0.05, clim.get(peak, 0.0) - 0.08)
+        ) or [7, 8, 9]
+        seasons = [
+            {
+                "months": list(WINTER_WHEAT_MONTHS),
+                "peak_month": peak,
+                "peak_ndvi": clim.get(peak, 0.0),
+                "mean_ndvi": float(
+                    np.mean([clim[m] for m in WINTER_WHEAT_MONTHS if m in clim])
+                ),
+                "label": "winter",
+            }
+        ]
+        detail = (
+            f"Seasons detected from {source_label}: "
+            f"winter {months_label(WINTER_WHEAT_MONTHS)} "
+            f"(peak {clim.get(peak, 0.0):.2f}); fallow {months_label(fallow_months)}"
+        )
+        return {
+            "seasons": seasons,
+            "fallow_months": fallow_months,
+            "climatology": clim,
+            "source": source_label,
+            "detail": detail,
+            "n_seasons": 1,
+            "green_thresh": green_thresh,
+            "fallow_thresh": fallow_thresh,
+            "pattern": "winter_wheat",
+        }
+
     warm = [s for s in seasons if 5 <= s["peak_month"] <= 10]
     cool = [s for s in seasons if s["peak_month"] >= 11 or s["peak_month"] <= 4]
     # If only one expanded run but both halves have green, force dual season
@@ -193,6 +276,7 @@ def detect_seasons_from_ndvi(
             if m not in occupied and clim.get(m, 1.0) < fallow_thresh
         ]
         fallow_months = sorted(set(gap) | set(troughs)) or [5, 6]
+        pattern = "rice_wheat"
     elif len(seasons) == 1:
         pm = seasons[0]["peak_month"]
         seasons[0]["label"] = "summer" if 4 <= pm <= 9 else "winter"
@@ -203,6 +287,7 @@ def detect_seasons_from_ndvi(
             vals = np.array([clim.get(m, 0.0) for m in range(1, 13)])
             thr = float(np.quantile(vals, 0.25))
             fallow_months = [m for m in range(1, 13) if clim.get(m, 0.0) <= thr]
+        pattern = "summer" if seasons[0]["label"] == "summer" else "winter_wheat"
     else:
         for s in seasons:
             pm = s["peak_month"]
@@ -214,6 +299,7 @@ def detect_seasons_from_ndvi(
             vals = np.array([clim.get(m, 0.0) for m in range(1, 13)])
             thr = float(np.quantile(vals, 0.25))
             fallow_months = [m for m in range(1, 13) if clim.get(m, 0.0) <= thr]
+        pattern = "mixed"
 
     detail = (
         f"Seasons detected from {source_label}: "
@@ -234,6 +320,7 @@ def detect_seasons_from_ndvi(
         "n_seasons": len(seasons),
         "green_thresh": green_thresh,
         "fallow_thresh": fallow_thresh,
+        "pattern": pattern,
     }
 
 
@@ -259,10 +346,10 @@ def map_crops_to_seasons(
                 bonus = 2
             if c["season"] == "cool" and label in {"rabi", "winter"}:
                 bonus = 2
-            # Explicit rice → kharif, winter wheat → rabi
+            # Explicit rice → kharif, winter wheat → rabi/winter
             if cid == "rice" and label == "kharif":
                 bonus += 3
-            if "wheat" in cid and "spring" not in cid and label == "rabi":
+            if "wheat" in cid and "spring" not in cid and label in {"rabi", "winter"}:
                 bonus += 3
             score = ov + bonus
             if score > best_ov:

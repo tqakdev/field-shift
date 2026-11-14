@@ -66,17 +66,25 @@ def explain_strategy(
                 source=str(src),
             )
         )
-    trend = features.get("grace_trend_cm_per_yr")
-    if trend is not None and trend < 0:
+    grace = features.get("grace_trend") or {}
+    if grace.get("detail"):
+        evidence.append(
+            EvidenceItem(
+                text=str(grace["detail"]),
+                source="GRACE/FO Mascon CRI (deseasonalized)",
+            )
+        )
+        _ = grace_groundwater_penalty(features)
+    elif features.get("grace_trend_cm_per_yr") is not None:
+        trend = float(features["grace_trend_cm_per_yr"])
         evidence.append(
             EvidenceItem(
                 text=(
-                    f"Regional water storage falling {abs(trend):.1f} cm/yr (GRACE-FO)"
+                    f"Regional water storage trend {trend:.1f} cm/yr (GRACE-FO)"
                 ),
                 source="GRACE/FO Mascon CRI",
             )
         )
-        _ = grace_groundwater_penalty(features)
     if frost.get("frost_free_days") is not None:
         evidence.append(
             EvidenceItem(

@@ -15,6 +15,8 @@ from fieldshift.data.ee_client import init_ee
 
 # Optical / climate analysis window length (complete years), ending at data availability.
 ANALYSIS_YEARS = 10
+# GRACE/FO mascon record start (independent of the optical analysis window).
+GRACE_START = "2002-04-01"
 
 
 def _require_ee() -> Any:
@@ -511,6 +513,8 @@ def extract_ee_field(
     grace_last = collection_last_month(ee, polygon, "NASA/GRACE/MASS_GRIDS_V04/MASCON_CRI")
     imerg_end = _cap_end(end, imerg_last)
     grace_end = _cap_end(end, grace_last)
+    # Full GRACE/FO record for regional groundwater trend (not truncated to optical window).
+    grace_start = GRACE_START
 
     return {
         "s2": extract_s2_monthly(ee, polygon, start, end),
@@ -520,13 +524,14 @@ def extract_ee_field(
         "imerg": extract_imerg_monthly(ee, polygon, start, imerg_end),
         "era5": extract_era5_monthly(ee, polygon, start, end),
         "srtm": extract_srtm(ee, polygon),
-        "grace": extract_grace_monthly(ee, polygon, start, grace_end),
+        "grace": extract_grace_monthly(ee, polygon, grace_start, grace_end),
         "_window": pd.DataFrame(
             [
                 {
                     "start": start,
                     "end": end,
                     "imerg_end": imerg_end,
+                    "grace_start": grace_start,
                     "grace_end": grace_end,
                 }
             ]

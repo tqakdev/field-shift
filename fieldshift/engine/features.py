@@ -146,6 +146,62 @@ def linear_trend_cm_per_yr(series: pd.Series) -> float | None:
     return slope_per_step
 
 
+def grace_trend_deseasonalized(series: pd.Series) -> dict[str, Any]:
+    """Deseasonalized GRACE/FO LWE linear trend with standard error (cm/yr).
+
+    Steps: (1) monthly climatology mean, (2) residual = value − clim, (3) OLS
+    slope vs decimal year with residual SE. Requires ≥24 valid months.
+    """
+    empty = {
+        "trend_cm_per_yr": None,
+        "se_cm_per_yr": None,
+        "n": 0,
+        "start_year": None,
+        "end_year": None,
+        "detail": None,
+    }
+    y = series.dropna().astype(float)
+    if len(y) < 24:
+        return empty
+    clim = y.groupby(y.index.month).transform("mean")
+    deseas = y - clim
+    # Decimal years for cm/yr slope
+    if isinstance(deseas.index, pd.PeriodIndex):
+        x = np.array(
+            [float(p.year) + (float(p.month) - 1.0) / 12.0 for p in deseas.index],
+            dtype=float,
+        )
+        start_year = int(deseas.index[0].year)
+        end_year = int(deseas.index[-1].year)
+    else:
+        x = np.arange(len(deseas), dtype=float) / 12.0
+        start_year = end_year = None
+    coeffs = np.polyfit(x, deseas.values, 1)
+    slope = float(coeffs[0])
+    intercept = float(coeffs[1])
+    yhat = slope * x + intercept
+    resid = deseas.values - yhat
+    n = int(len(deseas))
+    dof = max(1, n - 2)
+    s_err = float(np.sqrt(np.sum(resid**2) / dof))
+    x_var = float(np.sum((x - x.mean()) ** 2))
+    se_slope = float(s_err / np.sqrt(x_var)) if x_var > 0 else None
+    detail = None
+    if start_year is not None and end_year is not None and se_slope is not None:
+        detail = (
+            f"{slope:.1f} ± {se_slope:.1f} cm/yr "
+            f"({start_year}–{end_year}, GRACE/GRACE-FO, deseasonalized)"
+        )
+    return {
+        "trend_cm_per_yr": slope,
+        "se_cm_per_yr": se_slope,
+        "n": n,
+        "start_year": start_year,
+        "end_year": end_year,
+        "detail": detail,
+    }
+
+
 def data_coverage(tidy: pd.DataFrame) -> dict[str, Any]:
     from fieldshift.data.harmonize import variable_coverage
 
@@ -243,6 +299,17 @@ def compute_features(
         )
     if bare.get("source") == "crops.json":
         data_gaps.append("Fallow window fell back to crops.json calendar")
+    # Calendar fallow not confirmed by NDVI → data_gaps (round-2 rule)
+    cal = bare.get("calendar_fallow") or []
+    confirmed = set(bare.get("ndvi_confirmed") or [])
+    if cal and not set(cal).issubset(confirmed):
+        data_gaps.append(
+            "NDVI did not confirm calendar-derived fallow window "
+            f"{cal}"
+        )
+
+    grace_tr = grace_trend_deseasonalized(grace)
+    season_climate = season_window_climate(daily, months=list(range(1, 13)))
 
     return {
         "bare_months": bare,
@@ -266,7 +333,9 @@ def compute_features(
         "elevation_m": elev,
         "erosion_risk": erisk,
         "soil_moisture_trend": linear_trend_cm_per_yr(sm),
-        "grace_trend_cm_per_yr": linear_trend_cm_per_yr(grace),
+        "grace_trend": grace_tr,
+        "grace_trend_cm_per_yr": grace_tr.get("trend_cm_per_yr"),
+        "season_climate_annual": season_climate,
         "data_coverage": data_coverage(tidy),
         "feature_data_gaps": data_gaps,
         "current_rotation": rotation,
@@ -280,11 +349,65 @@ def compute_features(
             "t2m_max_mean_daily": t2m_max_mean,
             "t2m_min_mean_daily": t2m_min_mean,
         },
+        "daily": daily,
         "temp_labels": {
             "t2m": "mean of daily T2M (°C)",
             "tmax": "mean of daily T2M_MAX (°C) — not monthly extreme",
             "tmin": "mean of daily T2M_MIN (°C) — frost uses daily T2M_MIN",
         },
+    }
+
+
+def season_window_climate(
+    daily: pd.DataFrame, months: list[int]
+) -> dict[str, float | None]:
+    """Heat / frost / GDD / mean Tmax stats restricted to ``months`` (1–12)."""
+    if daily is None or daily.empty or not months:
+        return {
+            "heat_days_mean": None,
+            "frost_days_mean": None,
+            "gdd_mean": None,
+            "tmax_mean": None,
+            "frost_free_proxy_days": None,
+        }
+    work = daily.copy()
+    idx = work.index.tz_convert(None) if work.index.tz is not None else work.index
+    work.index = idx
+    work = work[work.index.month.isin(months)]
+    if work.empty:
+        return {
+            "heat_days_mean": None,
+            "frost_days_mean": None,
+            "gdd_mean": None,
+            "tmax_mean": None,
+            "frost_free_proxy_days": None,
+        }
+    years = work.index.year.unique()
+    heat = (
+        (work["T2M_MAX"] > 35).groupby(work.index.year).sum()
+        if "T2M_MAX" in work.columns
+        else pd.Series(dtype=float)
+    )
+    frost = (
+        (work["T2M_MIN"] <= 0).groupby(work.index.year).sum()
+        if "T2M_MIN" in work.columns
+        else pd.Series(dtype=float)
+    )
+    gdd = (
+        (work["T2M"] - 10.0).clip(lower=0).groupby(work.index.year).sum()
+        if "T2M" in work.columns
+        else pd.Series(dtype=float)
+    )
+    tmax = work["T2M_MAX"].mean() if "T2M_MAX" in work.columns else None
+    # Proxy frost-free length inside the window: days in window − mean frost days
+    n_days_window = float(work.groupby(work.index.year).size().mean()) if len(years) else 0.0
+    frost_mean = float(frost.mean()) if len(frost) else 0.0
+    return {
+        "heat_days_mean": float(heat.mean()) if len(heat) else None,
+        "frost_days_mean": frost_mean if len(frost) else None,
+        "gdd_mean": float(gdd.mean()) if len(gdd) else None,
+        "tmax_mean": float(tmax) if tmax is not None else None,
+        "frost_free_proxy_days": max(0.0, n_days_window - frost_mean),
     }
 
 

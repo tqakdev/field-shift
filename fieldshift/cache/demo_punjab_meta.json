@@ -1,0 +1,22 @@
+{
+  "lat": 30.9,
+  "lon": 75.8,
+  "size_ha": 12.0,
+  "start": "2016-09-01",
+  "end": "2026-09-01",
+  "imerg_end": "2025-09-01",
+  "grace_end": "2024-09-01",
+  "elapsed_s": 27.53092670800106,
+  "power_daily_rows": 3682,
+  "power_monthly_rows": 121,
+  "imerg_power_corr": {
+    "r": 0.9201289951783586,
+    "n_months": 109,
+    "note": "IMERG vs POWER monthly rain"
+  },
+  "recent_rain_months": 24,
+  "recent_rain_primary": "NASA POWER PRECTOTCORR",
+  "long_rain_primary": "GPM IMERG V07",
+  "et0_method": "penman_monteith",
+  "et0_note": "Primary PET is FAO-56 ET0 from POWER; ERA5-Land PET is cross-check only."
+}

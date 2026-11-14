@@ -15,12 +15,17 @@ def apply_scenario(features: dict[str, Any], scenario: ScenarioParams) -> dict[s
     temp_offset increases heat_days_mean (~4 days per °C) and shortens frost-free
     days (~5 days per °C) as a simple proxy.
     """
-    out = {k: deepcopy(v) for k, v in features.items() if k != "series"}
-    # Keep series for IR / phenology scoring; scale rain copy when needed.
+    out = {
+        k: deepcopy(v)
+        for k, v in features.items()
+        if k not in {"series", "daily"}
+    }
+    # Keep series/daily for IR / season climate; scale rain copy when needed.
     series = dict(features.get("series") or {})
     if scenario.rain_mult != 1.0 and "rain" in series and series["rain"] is not None:
         series = {**series, "rain": series["rain"] * scenario.rain_mult}
     out["series"] = series
+    out["daily"] = features.get("daily")
 
     rain = dict(out.get("rain") or {})
     if rain.get("rain_annual_mm") is not None:
