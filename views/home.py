@@ -69,6 +69,9 @@ if opened_id:
     st.session_state["field_id"] = field.id
     st.session_state["field_polygon"] = field.polygon
     st.session_state.pop("custom_conditions", None)
+    # Re-apply demo defaults for rotation / cycle on Field page.
+    st.session_state.pop("_cycle_field", None)
+    st.session_state.pop("_rotation_field", None)
     st.switch_page("views/field.py")
 
 section(

@@ -210,6 +210,20 @@ def list_sources() -> list[DataSourceMeta]:
     return [DataSourceMeta.model_validate(item) for item in raw]
 
 
+def load_field_features(
+    field_id: str,
+    *,
+    current_rotation: list[str] | None = None,
+) -> dict[str, Any]:
+    """Compute engine features from cached tidy/daily (for rotation slots / UI)."""
+    defaults = _DEMO_DEFAULTS.get(
+        field_id, {"rotation": ["maize", "soybean"], "water_access": "rainfed"}
+    )
+    rotation = list(current_rotation or defaults["rotation"])
+    tidy, daily = _load_demo_tables(field_id)
+    return compute_features(tidy, daily, current_rotation=rotation)
+
+
 def generate_strategies(
     field_id_or_conditions: str | FieldConditions,
     request: StrategyRequest | None = None,

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import streamlit as st
 from fieldshift.cache import read_json
+from fieldshift.engine import thresholds as th
 from fieldshift.services import list_sources, using_mock_data
 from ui.charts import pipeline_figure
 from ui.components import hero, section
@@ -65,12 +66,72 @@ st.write(
 )
 st.markdown(
     """
-- **Water** — crop water demand vs rain / irrigation access  
-- **Soil health** — cover, legumes, diversity  
+- **Water** — crop water demand vs rain / irrigation access (+ irrigation-event lift)  
+- **Soil health** — cover, legumes, diversity (+ N-fertilizer context when legumes present)  
 - **Erosion** — slope, rain extremes, bare months  
 - **Pest break** — family breaks in the rotation  
 - **Climate fit** — season length / heat vs crop needs  
-- **Income** — coarse relative yield / market proxy  
+- **Income** — relative price tier × yield potential, adjusted for market access  
+"""
+)
+
+section("Decision thresholds")
+st.write(
+    "Documented constants in `fieldshift/engine/thresholds.py` "
+    "(used for tiered cards):"
+)
+st.dataframe(
+    [
+        {
+            "Constant": "BEST_FIT_MIN_DELTA",
+            "Value": th.BEST_FIT_MIN_DELTA,
+            "Meaning": "Best fit must beat current by at least this",
+        },
+        {
+            "Constant": "WORTH_CONSIDERING_OF_BEST",
+            "Value": th.WORTH_CONSIDERING_OF_BEST,
+            "Meaning": "Near-best band for Worth considering",
+        },
+        {
+            "Constant": "NOT_SUITABLE_TOTAL_DELTA",
+            "Value": th.NOT_SUITABLE_TOTAL_DELTA,
+            "Meaning": "Below current by this → Not suitable",
+        },
+        {
+            "Constant": "BUDGET_LOW_COVER_PENALTY",
+            "Value": th.BUDGET_LOW_COVER_PENALTY,
+            "Meaning": "Soft penalty: low seed budget + cover",
+        },
+        {
+            "Constant": "LABOR_LOW_COVER_PENALTY",
+            "Value": th.LABOR_LOW_COVER_PENALTY,
+            "Meaning": "Soft penalty: low labor + cover",
+        },
+        {
+            "Constant": "MARKET_BUYER_INCOME_LIFT",
+            "Value": th.MARKET_BUYER_INCOME_LIFT,
+            "Meaning": "Income lift when I have a buyer",
+        },
+        {
+            "Constant": "IRRIGATION_EVENT_WATER_LIFT",
+            "Value": th.IRRIGATION_EVENT_WATER_LIFT,
+            "Meaning": "Water lift per irrigation event",
+        },
+        {
+            "Constant": "IRRIGATION_EVENT_WATER_CAP",
+            "Value": th.IRRIGATION_EVENT_WATER_CAP,
+            "Meaning": "Cap on irrigation-event lift",
+        },
+    ],
+    use_container_width=True,
+    hide_index=True,
+)
+st.markdown(
+    """
+**Tiers:** Best fit · Worth considering · Your rotation today · Not suitable here
+(collapsed). Labels always include an icon + text — never color alone.
+**Constraints** (machinery, market, labor, budget) do not change priority weights;
+they exclude candidates or apply the soft penalties above.
 """
 )
 

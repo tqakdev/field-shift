@@ -10,6 +10,11 @@ Confidence = Literal["high", "medium", "low"]
 WaterAccess = Literal["rainfed", "limited", "irrigated"]
 SoilType = Literal["sand", "loam", "clay", "silt", "unknown"]
 TimelapseIndex = Literal["ndvi", "rgb"]
+NitrogenUse = Literal["low", "medium", "high", "unknown"]
+LaborLevel = Literal["low", "normal", "high"]
+BudgetLevel = Literal["low", "normal"]
+MarketAccess = Literal["buyer", "no_market", "unknown"]
+StrategyTier = Literal["best_fit", "worth_considering", "baseline", "not_suitable"]
 
 
 class HealthResponse(BaseModel):
@@ -58,6 +63,20 @@ class CropInSequence(BaseModel):
     months: str
 
 
+class FarmConstraints(BaseModel):
+    """Hard/soft farm constraints — not priority weights.
+
+    Machinery fields: True = have it, False = don't, None = don't know (no hard block).
+    """
+
+    has_small_grain_harvest: bool | None = None
+    has_hay_forage_equipment: bool | None = None
+    has_row_crop_planter: bool | None = None
+    labor: LaborLevel = "normal"
+    budget_new_seed: BudgetLevel = "normal"
+    market_access: dict[str, MarketAccess] = Field(default_factory=dict)
+
+
 class StrategyCard(BaseModel):
     """One rotation strategy shown to the farmer."""
 
@@ -72,6 +91,11 @@ class StrategyCard(BaseModel):
     data_gaps: list[str]
     risks_for_local_review: list[str]
     confidence: Confidence
+    tier: StrategyTier | None = None
+    tier_label: str = ""
+    tier_reason: str = ""
+    unsuitable_reasons: list[str] = Field(default_factory=list)
+    soft_notes: list[str] = Field(default_factory=list)
 
 
 class PriorityWeights(BaseModel):
@@ -98,8 +122,11 @@ class StrategyRequest(BaseModel):
     current_rotation: list[str]
     soil_type: SoilType = "unknown"
     water_access: WaterAccess = "rainfed"
+    irrigations_per_season: int = Field(default=0, ge=0, le=20)
+    nitrogen: NitrogenUse = "unknown"
     livestock: bool = False
     weights: PriorityWeights = Field(default_factory=PriorityWeights)
+    constraints: FarmConstraints = Field(default_factory=FarmConstraints)
     scenario: ScenarioParams = Field(default_factory=ScenarioParams)
 
 

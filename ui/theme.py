@@ -30,7 +30,7 @@ SCORE_COLORS = {
     "income": "#6B5B3E",
 }
 
-_THEME_VERSION = "nasa-v7"
+_THEME_VERSION = "nasa-v8"
 
 
 def inject_theme() -> None:
@@ -250,6 +250,28 @@ p, .stMarkdown p {{
   color: {INK};
   margin: 0 0 0.15rem 0;
   line-height: 1.25;
+}}
+.fs-tier-reason {{
+  font-size: 0.82rem;
+  color: {MUTED};
+  margin: 0.2rem 0 0.35rem 0;
+  line-height: 1.35;
+}}
+.fs-tier-best {{
+  border-left: 3px solid {EARTH};
+  padding-left: 0.55rem;
+}}
+.fs-tier-worth {{
+  border-left: 3px solid {WHEAT};
+  padding-left: 0.55rem;
+}}
+.fs-tier-base {{
+  border-left: 3px solid {MUTED};
+  padding-left: 0.55rem;
+}}
+.fs-tier-bad {{
+  border-left: 3px solid {NASA_RED};
+  padding-left: 0.55rem;
 }}
 .fs-strat-summary {{
   display: flex;

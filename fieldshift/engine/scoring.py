@@ -5,7 +5,20 @@ from __future__ import annotations
 from typing import Any
 
 from fieldshift.engine.crops import crop_by_id
-from fieldshift.models import Confidence, PriorityWeights, ScoreSet, WaterAccess
+from fieldshift.engine.thresholds import (
+    IRRIGATION_EVENT_WATER_CAP,
+    IRRIGATION_EVENT_WATER_LIFT,
+    MARKET_BUYER_INCOME_LIFT,
+    N_LEGUME_BONUS,
+)
+from fieldshift.models import (
+    Confidence,
+    MarketAccess,
+    NitrogenUse,
+    PriorityWeights,
+    ScoreSet,
+    WaterAccess,
+)
 
 MARKET_TIER = {"none": 0.0, "low": 0.3, "medium": 0.6, "high": 0.9}
 ROOT_DEPTH = {"shallow": 0.35, "medium": 0.65, "deep": 1.0}
@@ -30,6 +43,7 @@ def score_water(
     sequence: list[str],
     features: dict[str, Any],
     water_access: WaterAccess = "rainfed",
+    irrigations_per_season: int = 0,
 ) -> float:
     """Water score from seasonal irrigation requirement (Kc × ET0 − effective rain).
 
@@ -49,7 +63,8 @@ def score_water(
         grace_penalty = min(0.25, −trend_cm_per_yr / 20)
 
     Limited irrigation: half the grace penalty. Rainfed: no grace penalty.
-    Uses ``features['rain']['rain_annual_mm']`` from rain_best only (labelled in evidence).
+    When irrigated/limited, ``irrigations_per_season`` adds
+    ``min(CAP, n × LIFT)`` (see thresholds.py).
     """
     from fieldshift.engine.crop_water import irrigation_requirement_mm
 
@@ -65,17 +80,32 @@ def score_water(
     base = sum(scores) / len(scores)
     penalty = grace_groundwater_penalty(features)
     if water_access == "irrigated":
-        return _clip01(base - penalty)
-    if water_access == "limited":
-        return _clip01(base - 0.5 * penalty)
-    return _clip01(base)
+        score = base - penalty
+    elif water_access == "limited":
+        score = base - 0.5 * penalty
+    else:
+        score = base
+    if water_access in ("irrigated", "limited") and irrigations_per_season > 0:
+        lift = min(
+            IRRIGATION_EVENT_WATER_CAP,
+            irrigations_per_season * IRRIGATION_EVENT_WATER_LIFT,
+        )
+        score += lift
+    return _clip01(score)
 
 
-def score_soil_health(sequence: list[str], features: dict[str, Any]) -> float:
+def score_soil_health(
+    sequence: list[str],
+    features: dict[str, Any],
+    *,
+    nitrogen: NitrogenUse = "unknown",
+) -> float:
     """Weighted mean of N-fixing, residue OM, root depth, and cover months.
 
     weights: N-fix 0.3, residue 0.25, root 0.2, cover 0.25.
     Cover = 1 − (n_bare_months / 12).
+    When any crop is nitrogen-fixing, add ``N_LEGUME_BONUS[nitrogen]``
+    (larger when current fertilizer use is high).
     """
     if not sequence:
         return 0.0
@@ -93,7 +123,10 @@ def score_soil_health(sequence: list[str], features: dict[str, Any]) -> float:
     cover_boost = sum(1 for c in sequence if crop_by_id(c)["type"] == "cover")
     bare_eff = max(0, bare_n - cover_boost)
     cover = 1.0 - bare_eff / 12.0
-    return _clip01(0.3 * nfix + 0.25 * residue + 0.2 * root + 0.25 * cover)
+    base = 0.3 * nfix + 0.25 * residue + 0.2 * root + 0.25 * cover
+    if any(bool(crop_by_id(c).get("nitrogen_fixing")) for c in sequence):
+        base += float(N_LEGUME_BONUS.get(nitrogen, N_LEGUME_BONUS["unknown"]))
+    return _clip01(base)
 
 
 def score_erosion(sequence: list[str], features: dict[str, Any]) -> float:
@@ -195,17 +228,26 @@ COVER_ESTABLISHMENT_PENALTY = 0.05
 COVER_FORAGE_BONUS = 0.08
 
 
-def score_income(sequence: list[str], livestock: bool = False) -> float:
-    """Income from **cash/forage crops only**; covers never average market_tier "none".
+def score_income(
+    sequence: list[str],
+    livestock: bool = False,
+    *,
+    market_access: dict[str, MarketAccess] | None = None,
+) -> float:
+    """Relative income proxy (not a farm budget).
 
     income = mean(market_tier of non-cover crops)
            − COVER_ESTABLISHMENT_PENALTY × n_cover_crops
            + COVER_FORAGE_BONUS if livestock and any cover forage_value > 0.5
+           + MARKET_BUYER_INCOME_LIFT × share of cash crops with buyer access
 
-    Cover crops are off-season additions, not income substitutes.
+    ``market_tier`` ≈ typical price tier × yield potential. Market access adjusts
+    the relative score; "no local market" is a hard constraint for cash crops
+    (see constraints.py), not a soft income cut here.
     """
     if not sequence:
         return 0.0
+    access = market_access or {}
     cash = [c for c in sequence if crop_by_id(c)["type"] != "cover"]
     covers = [c for c in sequence if crop_by_id(c)["type"] == "cover"]
     if not cash:
@@ -213,6 +255,9 @@ def score_income(sequence: list[str], livestock: bool = False) -> float:
     else:
         tiers = [MARKET_TIER.get(crop_by_id(c)["market_tier"], 0.3) for c in cash]
         base = sum(tiers) / len(tiers)
+        buyer_n = sum(1 for c in cash if access.get(c) == "buyer")
+        if buyer_n:
+            base += MARKET_BUYER_INCOME_LIFT * (buyer_n / len(cash))
     base -= COVER_ESTABLISHMENT_PENALTY * len(covers)
     if livestock and covers:
         forage = max(float(crop_by_id(c)["forage_value"]) for c in covers)
@@ -220,27 +265,40 @@ def score_income(sequence: list[str], livestock: bool = False) -> float:
             base += COVER_FORAGE_BONUS
     return _clip01(base)
 
+
 def score_strategy(
     sequence: list[str],
     features: dict[str, Any],
     *,
     weights: PriorityWeights | None = None,
     water_access: WaterAccess = "rainfed",
+    irrigations_per_season: int = 0,
+    nitrogen: NitrogenUse = "unknown",
     livestock: bool = False,
+    market_access: dict[str, MarketAccess] | None = None,
+    soft_penalty: float = 0.0,
 ) -> ScoreSet:
-    """Weighted total = Σ(w_i × s_i) / Σ w_i."""
+    """Weighted total = Σ(w_i × s_i) / Σ w_i − soft_penalty (clipped)."""
     weights = weights or PriorityWeights()
     scores = {
-        "water": score_water(sequence, features, water_access),
-        "soil_health": score_soil_health(sequence, features),
+        "water": score_water(
+            sequence,
+            features,
+            water_access,
+            irrigations_per_season=irrigations_per_season,
+        ),
+        "soil_health": score_soil_health(sequence, features, nitrogen=nitrogen),
         "erosion": score_erosion(sequence, features),
         "pest_break": score_pest_break(sequence),
         "climate_fit": score_climate_fit(sequence, features),
-        "income": score_income(sequence, livestock),
+        "income": score_income(
+            sequence, livestock, market_access=market_access
+        ),
     }
     w = weights.model_dump()
     total_w = sum(w[k] for k in scores)
     total = sum(w[k] * scores[k] for k in scores) / total_w if total_w else 0.0
+    total = _clip01(total - float(soft_penalty or 0.0))
     return ScoreSet(**scores, total=float(total))
 
 
