@@ -11,6 +11,9 @@ from __future__ import annotations
 # Best fit must beat the farmer's current rotation by at least this much.
 BEST_FIT_MIN_DELTA = 0.02
 
+# |delta| below this → UI shows neutral "About the same as yours" (no arrow).
+DELTA_NEUTRAL_THRESHOLD = 0.02
+
 # Worth considering: within this gap of the best-fit total (among suitable cards).
 WORTH_CONSIDERING_OF_BEST = 0.05
 

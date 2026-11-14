@@ -303,11 +303,16 @@ _chart = (
     if field_id == "custom"
     else _cached_demo_conditions_figure(field_id)
 )
-st.plotly_chart(
-    _chart,
-    use_container_width=True,
-    config={"displayModeBar": False},
-)
+with st.container(border=True):
+    st.markdown(
+        '<div class="fs-chart-wrap" aria-hidden="true"></div>',
+        unsafe_allow_html=True,
+    )
+    st.plotly_chart(
+        _chart,
+        use_container_width=True,
+        config={"displayModeBar": False},
+    )
 st.caption(
     "Plant greenness (line) · Rain mm (bars) · Water balance (dashed). "
     "Tan shade ≈ usually bare · light red ≈ growing-season stress."

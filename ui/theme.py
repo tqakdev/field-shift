@@ -1,4 +1,4 @@
-"""Field Shift design system — single source of truth for tokens + CSS."""
+"""Field Shift design system — flat Streamlit-demo style tokens + CSS."""
 
 from __future__ import annotations
 
@@ -7,18 +7,19 @@ import streamlit as st
 # ---------------------------------------------------------------------------
 # Colour tokens (docs/DESIGN.md)
 # ---------------------------------------------------------------------------
-BACKGROUND = "#FBF8F2"
+BACKGROUND = "#FAFAF8"
 SURFACE = "#FFFFFF"
-SIDEBAR = "#F0EAD9"
+SIDEBAR = "#F0EEE8"  # same family as page, slightly darker
 TEXT = "#2B2B2B"
-MUTED = "#5C5C5C"  # darkened from #6B6B6B for WCAG AA on BACKGROUND/SURFACE
+MUTED = "#5C5C5C"  # WCAG AA on BACKGROUND/SURFACE
 PRIMARY = "#3F7D3A"
 WARNING = "#B26A00"
 DANGER = "#B23A3A"
 INFO = "#3A7CA5"
-CARD_BORDER = "#E3DDCF"
+CARD_BORDER = "#E8E6E0"
 HAIRLINE = CARD_BORDER
 FOCUS = "#2F5E2C"
+CARD_RADIUS = "10px"
 
 # Spacing scale (px)
 SPACE = (8, 16, 24, 32, 48)
@@ -70,12 +71,11 @@ WHEAT_BG = SIDEBAR
 
 # Text/background pairs that must meet WCAG 2.2 AA (used by tests)
 CONTRAST_PAIRS: list[tuple[str, str, str, float]] = [
-    # (name, fg, bg, min_ratio)
     ("text_on_background", TEXT, BACKGROUND, 4.5),
     ("text_on_surface", TEXT, SURFACE, 4.5),
     ("muted_on_background", MUTED, BACKGROUND, 4.5),
     ("muted_on_surface", MUTED, SURFACE, 4.5),
-    ("primary_on_background", PRIMARY, BACKGROUND, 3.0),  # large / UI chrome
+    ("primary_on_background", PRIMARY, BACKGROUND, 3.0),
     ("primary_on_surface", PRIMARY, SURFACE, 3.0),
     ("warning_on_background", WARNING, BACKGROUND, 3.0),
     ("danger_on_background", DANGER, BACKGROUND, 3.0),
@@ -83,7 +83,7 @@ CONTRAST_PAIRS: list[tuple[str, str, str, float]] = [
     ("text_on_sidebar", TEXT, SIDEBAR, 4.5),
 ]
 
-_THEME_VERSION = "design-v2"
+_THEME_VERSION = "flatten-v1"
 
 
 def inject_theme() -> None:
@@ -119,7 +119,7 @@ div[data-testid="stDecoration"] {{ display: none; }}
   box-shadow: none !important;
 }}
 
-/* Strip Streamlit page / fragment chrome — borders only on real cards */
+/* Strip Streamlit page / fragment chrome — borders only on strategy cards + charts */
 div[data-testid="stVerticalBlockBorderWrapper"],
 div[data-testid="stMainBlockContainer"],
 section.main .block-container {{
@@ -136,14 +136,15 @@ div[data-testid="stVerticalBlockBorderWrapper"] {{
 div[data-testid="stVerticalBlockBorderWrapper"] > div {{
   height: auto !important;
 }}
-/* Fragments sometimes draw a panel; keep them borderless on Field */
-[data-testid="stVerticalBlockBorderWrapper"]:not(:has(.fs-strat)):not(:has(.fs-chip)) {{
+[data-testid="stVerticalBlockBorderWrapper"]:not(:has(.fs-strat)):not(
+  :has(.fs-chart-wrap)
+):not(:has(.fs-demo-bordered)) {{
   border: none !important;
   box-shadow: none !important;
   background: transparent !important;
 }}
 
-/* Sidebar */
+/* Sidebar — same family as page, slightly darker */
 section[data-testid="stSidebar"],
 section[data-testid="stSidebar"] > div,
 [data-testid="stSidebarContent"] {{
@@ -158,7 +159,7 @@ section[data-testid="stSidebar"] a {{
   color: {TEXT} !important;
 }}
 section[data-testid="stSidebar"] [data-testid="stSidebarNavLink"] {{
-  border-radius: 8px;
+  border-radius: {CARD_RADIUS};
   margin: 4px 8px;
   padding: 12px 16px !important;
   min-height: 44px;
@@ -172,7 +173,7 @@ section[data-testid="stSidebar"] [data-testid="stSidebarNavLink"]:hover {{
 /* Typography scale */
 h1, .fs-title {{
   font-size: 32px !important;
-  font-weight: 700 !important;
+  font-weight: 600 !important;
   color: {TEXT} !important;
   letter-spacing: -0.02em;
   line-height: 1.2 !important;
@@ -180,18 +181,18 @@ h1, .fs-title {{
   text-wrap: balance;
 }}
 h2, .fs-section-title {{
-  font-size: 22px !important;
-  font-weight: 600 !important;
+  font-size: 28px !important;
+  font-weight: 500 !important;
   color: {TEXT} !important;
   letter-spacing: -0.01em;
-  line-height: 1.2 !important;
+  line-height: 1.25 !important;
   text-wrap: balance;
 }}
-h3 {{
+h3, h5 {{
   font-size: 18px !important;
-  font-weight: 600 !important;
+  font-weight: 500 !important;
   color: {TEXT} !important;
-  line-height: 1.2 !important;
+  line-height: 1.3 !important;
 }}
 p, .stMarkdown p {{
   font-size: 16px;
@@ -207,17 +208,17 @@ p, .stMarkdown p {{
   max-width: 640px;
 }}
 
-/* Hero — no side stripe; soft surface card */
+/* Hero — flat, no boxed panel */
 .fs-hero {{
-  background: {SURFACE};
-  border: 1px solid {CARD_BORDER};
-  border-radius: 8px;
-  padding: 24px;
-  margin-bottom: 48px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0 0 24px 0;
+  margin-bottom: 24px;
 }}
 .fs-eyebrow {{
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: {PRIMARY};
@@ -228,7 +229,7 @@ p, .stMarkdown p {{
   margin: 8px 0;
   max-width: 640px;
   color: {TEXT};
-  font-weight: 500;
+  font-weight: 400;
   line-height: 1.5;
 }}
 .fs-hero-sub {{
@@ -242,7 +243,7 @@ p, .stMarkdown p {{
   display: inline-block;
   margin-top: 16px;
   padding: 8px 16px;
-  border-radius: 8px;
+  border-radius: {CARD_RADIUS};
   background: {PRIMARY};
   color: {SURFACE} !important;
   font-size: 13px;
@@ -256,8 +257,8 @@ p, .stMarkdown p {{
 
 .fs-section {{
   display: flex;
-  align-items: center;
-  gap: 8px;
+  align-items: baseline;
+  gap: 10px;
   margin: 48px 0 8px 0;
   padding-bottom: 0;
   border-bottom: none;
@@ -270,36 +271,35 @@ p, .stMarkdown p {{
   line-height: 1.5;
 }}
 .fs-step {{
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 28px;
-  height: 28px;
-  padding: 0 6px;
-  border-radius: 8px;
-  background: {PRIMARY};
-  color: {SURFACE} !important;
+  display: inline;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 500;
+  color: {MUTED};
+  letter-spacing: 0.02em;
+  background: none;
+  padding: 0;
+  min-width: 0;
+  height: auto;
+  border-radius: 0;
 }}
 
-/* Home steps */
+/* Home steps — flat, no boxes */
 .fs-home-steps {{
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  gap: 24px;
   margin: 8px 0 32px 0;
 }}
 .fs-home-step {{
-  background: {SURFACE};
-  border: 1px solid {CARD_BORDER};
-  border-radius: 8px;
-  padding: 16px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
 }}
 .fs-home-step-num {{
   font-size: 13px;
-  font-weight: 600;
-  color: {PRIMARY};
+  font-weight: 500;
+  color: {MUTED};
   margin: 0 0 8px 0;
 }}
 .fs-home-step-title {{
@@ -318,21 +318,21 @@ p, .stMarkdown p {{
   .fs-home-steps {{ grid-template-columns: 1fr; }}
 }}
 
-/* Fact chips */
+/* Fact chips — metric-style, no borders */
 .fs-chip-grid {{
   display: grid;
   grid-template-columns: repeat(var(--fs-chip-cols, 4), minmax(0, 1fr));
-  gap: 16px;
+  gap: 24px;
   margin: 8px 0 32px 0;
   align-items: stretch;
 }}
 .fs-chip {{
   display: flex;
   flex-direction: column;
-  background: {SURFACE};
-  border: 1px solid {CARD_BORDER};
-  border-radius: 8px;
-  padding: 16px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
   min-height: 0;
   height: 100%;
   box-sizing: border-box;
@@ -341,14 +341,14 @@ p, .stMarkdown p {{
 .fs-chip-label {{
   font-size: 13px;
   color: {MUTED};
-  margin: 0 0 8px 0;
-  font-weight: 600;
+  margin: 0 0 4px 0;
+  font-weight: 500;
 }}
 .fs-chip-value {{
-  font-size: 26px;
-  font-weight: 700;
+  font-size: 28px;
+  font-weight: 600;
   color: {TEXT};
-  margin: 0 0 8px 0;
+  margin: 0 0 4px 0;
   line-height: 1.2;
   overflow: visible;
   font-variant-numeric: tabular-nums;
@@ -361,15 +361,15 @@ p, .stMarkdown p {{
   flex: 1 1 auto;
 }}
 .fs-chip-source {{
-  margin: 16px 0 0 0;
-  padding-top: 8px;
-  border-top: 1px solid {CARD_BORDER};
-  font-size: 13px;
+  margin: 8px 0 0 0;
+  padding-top: 0;
+  border-top: none;
+  font-size: 12px;
   line-height: 1.35;
   color: {MUTED};
 }}
 @media (max-width: 700px) {{
-  .fs-chip-grid {{ grid-template-columns: 1fr; }}
+  .fs-chip-grid {{ grid-template-columns: 1fr 1fr; }}
 }}
 
 /* Strategy cards */
@@ -377,38 +377,27 @@ p, .stMarkdown p {{
   margin: 0;
   padding-top: 0;
   overflow: visible;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }}
-.fs-strat::before {{
-  content: "";
-  display: block;
-  width: 32px;
-  height: 3px;
-  border-radius: 2px;
-  background: {MUTED};
-  margin: 0 0 12px 0;
-}}
-.fs-tier-best::before {{ background: {PRIMARY}; }}
-.fs-tier-worth::before {{ background: {WARNING}; }}
-.fs-tier-base::before {{ background: {INFO}; }}
-.fs-tier-bad::before {{ background: {DANGER}; }}
-.fs-strat-role {{
-  font-size: 13px;
+.fs-best-badge {{
+  display: inline-block;
+  font-size: 12px;
   font-weight: 600;
-  color: {MUTED};
+  color: {PRIMARY};
+  background: #E8F2E7;
+  padding: 2px 8px;
+  border-radius: 6px;
   margin: 0 0 8px 0;
-  min-height: 20px;
 }}
-.fs-tier-best .fs-strat-role {{ color: {PRIMARY}; }}
-.fs-tier-worth .fs-strat-role {{ color: {WARNING}; }}
-.fs-tier-base .fs-strat-role {{ color: {INFO}; }}
-.fs-tier-bad .fs-strat-role {{ color: {DANGER}; }}
 .fs-strat-title {{
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 600;
   color: {TEXT};
   margin: 0;
-  line-height: 1.25;
-  min-height: 2.5em;
+  line-height: 1.35;
+  min-height: 2.7em;
   overflow: visible;
 }}
 .fs-tier-reason {{
@@ -419,62 +408,48 @@ p, .stMarkdown p {{
   min-height: 2.9em;
 }}
 .fs-strat-flags {{
-  min-height: 24px;
+  min-height: 20px;
   margin: 8px 0;
   font-size: 13px;
   color: {MUTED};
   line-height: 1.35;
 }}
 .fs-strat-flags .bad {{ color: {DANGER}; }}
-.fs-strat-summary {{
+
+.fs-overall {{
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 16px;
-  flex-wrap: wrap;
-  margin: 16px 0;
-  padding: 16px;
-  box-sizing: border-box;
-  background: {BACKGROUND};
-  border: 1px solid {CARD_BORDER};
-  border-radius: 8px;
-  overflow: visible;
+  margin: 16px 0 8px 0;
+  padding: 0;
+  background: transparent;
+  border: none;
 }}
-.fs-strat-score {{
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  min-width: 0;
-}}
-.fs-strat-score-num {{
-  font-size: 26px;
-  font-weight: 700;
-  color: {TEXT};
-  line-height: 1.2;
-  overflow: visible;
-  font-variant-numeric: tabular-nums;
-}}
-.fs-strat-score-label {{
+.fs-overall-label {{
   font-size: 13px;
   color: {MUTED};
   font-weight: 500;
+  margin: 0 0 2px 0;
 }}
-.fs-strat-meta {{
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+.fs-overall-num {{
+  font-size: 32px;
+  font-weight: 600;
+  color: {TEXT};
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
 }}
 .fs-card-delta {{
   font-size: 13px;
-  font-weight: 600;
-  padding: 4px 8px;
-  border-radius: 8px;
+  font-weight: 500;
+  padding: 0;
+  border-radius: 0;
   white-space: nowrap;
+  background: transparent !important;
 }}
-.fs-card-delta.up {{ color: {PRIMARY}; background: #E8F2E7; }}
-.fs-card-delta.down {{ color: {DANGER}; background: #F8EAEA; }}
-.fs-card-delta.flat {{ color: {MUTED}; background: {SIDEBAR}; }}
+.fs-card-delta.up {{ color: {PRIMARY}; }}
+.fs-card-delta.down {{ color: {DANGER}; }}
+.fs-card-delta.flat {{ color: {MUTED}; }}
 .fs-card-note {{
   font-size: 13px;
   color: {MUTED};
@@ -484,6 +459,50 @@ p, .stMarkdown p {{
   flex: 1 1 auto;
   min-height: 8px;
   height: 8px;
+}}
+
+.fs-diff-list {{
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 12px 0 8px 0;
+  min-height: 96px;
+}}
+.fs-diff-top {{
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: baseline;
+  margin-bottom: 4px;
+}}
+.fs-diff-name {{
+  font-size: 13px;
+  font-weight: 500;
+  color: {TEXT};
+}}
+.fs-diff-band {{
+  font-size: 12px;
+  color: {MUTED};
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}}
+.fs-diff-track {{
+  height: 6px;
+  background: {SIDEBAR};
+  border: none;
+  border-radius: 3px;
+  overflow: hidden;
+}}
+.fs-diff-fill {{
+  height: 100%;
+  border-radius: 3px;
+  min-width: 2px;
+}}
+.fs-conf {{
+  font-size: 12px;
+  color: {MUTED};
+  margin: 8px 0 0 0;
+  letter-spacing: 0.01em;
 }}
 
 /* Equal-height strategy card rows only */
@@ -508,11 +527,11 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(.fs-strat) {{
   display: flex !important;
   flex-direction: column;
   border: 1px solid {CARD_BORDER} !important;
-  border-radius: 8px !important;
+  border-radius: {CARD_RADIUS} !important;
   background: {SURFACE} !important;
   box-shadow: none !important;
   overflow: visible !important;
-  padding: 4px;
+  padding: 12px 14px 8px 14px;
 }}
 div[data-testid="stVerticalBlockBorderWrapper"]:has(.fs-strat) > div {{
   height: 100%;
@@ -529,75 +548,32 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(.fs-strat)
   flex: 1 1 auto !important;
 }}
 
-.fs-sc-grid {{
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
+/* Chart wrappers — thin border only */
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.fs-chart-wrap) {{
+  border: 1px solid {CARD_BORDER} !important;
+  border-radius: {CARD_RADIUS} !important;
+  background: {SURFACE} !important;
+  box-shadow: none !important;
+  padding: 8px;
+}}
+.fs-chart-wrap {{
   margin: 0;
-}}
-.fs-sc {{
-  min-width: 0;
-  cursor: help;
-  min-height: 56px;
-  overflow: visible;
-}}
-.fs-sc-top {{
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 4px;
-}}
-.fs-sc-name {{
-  font-size: 13px;
-  font-weight: 600;
-  color: {TEXT};
-}}
-.fs-sc-val {{
-  font-size: 13px;
-  font-weight: 600;
-  color: {MUTED};
-  flex-shrink: 0;
-  font-variant-numeric: tabular-nums;
-}}
-.fs-sc-track {{
-  height: 8px;
-  background: {SIDEBAR};
-  border: 1px solid {CARD_BORDER};
-  border-radius: 4px;
+  padding: 0;
+  height: 0;
   overflow: hidden;
-}}
-.fs-sc-fill {{
-  height: 100%;
-  border-radius: 3px;
-  min-width: 2px;
-}}
-.fs-sc-band {{
-  display: block;
-  margin-top: 4px;
-  font-size: 13px;
-  font-weight: 600;
-  color: {MUTED};
-  min-height: 18px;
-}}
-.fs-band-strong {{ color: {PRIMARY}; }}
-.fs-band-good {{ color: {INFO}; }}
-.fs-band-fair {{ color: {WARNING}; }}
-.fs-band-needs-attention {{ color: {DANGER}; }}
-@media (max-width: 700px) {{
-  .fs-sc-grid {{ grid-template-columns: 1fr; }}
 }}
 
 .fs-banner {{
-  background: {SURFACE};
-  border: 1px solid {CARD_BORDER};
-  border-radius: 8px;
-  padding: 16px 24px;
+  background: transparent;
+  border: none;
+  border-left: 3px solid {PRIMARY};
+  border-radius: 0;
+  padding: 4px 0 4px 16px;
   margin: 8px 0 24px 0;
   font-size: 16px;
   color: {TEXT};
-  box-shadow: inset 0 3px 0 0 {PRIMARY};
-  max-width: 100%;
+  box-shadow: none;
+  max-width: 640px;
 }}
 .fs-banner strong {{ color: {PRIMARY}; }}
 
@@ -613,7 +589,7 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(.fs-strat)
   display: inline-block;
   background: {SIDEBAR};
   border: 1px solid {CARD_BORDER};
-  border-radius: 8px;
+  border-radius: {CARD_RADIUS};
   padding: 4px 12px;
   font-size: 13px;
   color: {TEXT};
@@ -628,15 +604,16 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(.fs-strat)
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 10px;
-  border-radius: 8px;
-  border: 1px solid;
+  padding: 0;
+  border-radius: 0;
+  border: none;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
+  background: transparent !important;
 }}
-.fs-badge.high {{ color: {PRIMARY}; border-color: {PRIMARY}; background: #E8F2E7; }}
-.fs-badge.medium {{ color: {INFO}; border-color: {INFO}; background: #E8F1F6; }}
-.fs-badge.low {{ color: {DANGER}; border-color: {DANGER}; background: #F8EAEA; }}
+.fs-badge.high {{ color: {PRIMARY}; }}
+.fs-badge.medium {{ color: {INFO}; }}
+.fs-badge.low {{ color: {DANGER}; }}
 
 /* Sliders — prevent value label clipping */
 div[data-testid="stSlider"] {{
@@ -652,8 +629,8 @@ div[data-testid="stSlider"] label {{
 }}
 
 div[data-testid="stMetricValue"] {{
-  font-size: 26px !important;
-  font-weight: 700 !important;
+  font-size: 28px !important;
+  font-weight: 600 !important;
   color: {TEXT} !important;
   line-height: 1.2 !important;
   overflow: visible !important;
@@ -664,7 +641,7 @@ div[data-testid="stMetricLabel"] {{
 }}
 
 .stButton > button {{
-  border-radius: 8px !important;
+  border-radius: {CARD_RADIUS} !important;
   min-height: 44px !important;
   font-weight: 600 !important;
   transition: background-color 0.15s ease, border-color 0.15s ease !important;
@@ -691,15 +668,29 @@ input:focus-visible,
   outline-offset: 2px !important;
 }}
 
+/* Expanders — thin top divider only; no box / fill */
+[data-testid="stExpander"],
+[data-testid="stExpander"] > details,
 [data-testid="stExpander"] details {{
-  border: 1px solid {CARD_BORDER} !important;
-  border-radius: 8px !important;
-  background: {SURFACE} !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}}
+[data-testid="stExpander"] details {{
+  border-top: 1px solid {CARD_BORDER} !important;
 }}
 [data-testid="stExpander"] summary {{
-  padding: 12px 16px !important;
-  font-size: 16px !important;
+  padding: 12px 0 !important;
+  font-size: 14px !important;
   min-height: 44px;
+  color: {MUTED} !important;
+  background: transparent !important;
+}}
+[data-testid="stExpander"] [data-testid="stExpanderDetails"],
+[data-testid="stExpander"] .streamlit-expanderContent {{
+  background: transparent !important;
+  border: none !important;
 }}
 div[data-testid="stVerticalBlockBorderWrapper"]:has(.fs-strat)
 [data-testid="stExpander"] details {{
@@ -711,12 +702,12 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(.fs-strat)
 
 div[data-testid="stDataFrame"] {{
   border: 1px solid {CARD_BORDER};
-  border-radius: 8px;
+  border-radius: {CARD_RADIUS};
   overflow: hidden;
 }}
 
 [data-testid="stImage"] img {{
-  border-radius: 8px;
+  border-radius: {CARD_RADIUS};
   border: 1px solid {CARD_BORDER};
 }}
 div[data-testid="stHorizontalBlock"] [data-testid="stImage"] img {{
@@ -729,7 +720,12 @@ div[data-testid="stHorizontalBlock"] [data-testid="stImage"] img {{
   aspect-ratio: 5 / 4;
   background: {SIDEBAR};
   border: 1px solid {CARD_BORDER};
-  border-radius: 8px;
+  border-radius: {CARD_RADIUS};
+}}
+.fs-demo-bordered {{
+  /* marker for demo field card thin border wrappers */
+  height: 0;
+  overflow: hidden;
 }}
 .fs-demo-copy {{
   min-height: 120px;
@@ -756,6 +752,15 @@ div[data-testid="stHorizontalBlock"] [data-testid="stImage"] img {{
   margin: 0;
 }}
 
+/* Demo field cards — one thin border each */
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.fs-demo-bordered) {{
+  border: 1px solid {CARD_BORDER} !important;
+  border-radius: {CARD_RADIUS} !important;
+  background: {SURFACE} !important;
+  box-shadow: none !important;
+  padding: 12px;
+}}
+
 .fs-glossary {{
   display: grid;
   gap: 8px;
@@ -765,14 +770,15 @@ div[data-testid="stHorizontalBlock"] [data-testid="stImage"] img {{
   display: grid;
   grid-template-columns: minmax(7rem, 11rem) 1fr;
   gap: 16px;
-  padding: 16px;
-  background: {SURFACE};
-  border: 1px solid {CARD_BORDER};
-  border-radius: 8px;
+  padding: 12px 0;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid {CARD_BORDER};
+  border-radius: 0;
 }}
 .fs-glossary-term {{
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   color: {PRIMARY};
 }}
 .fs-glossary-def {{
@@ -792,13 +798,13 @@ div[data-testid="stHorizontalBlock"] [data-testid="stImage"] img {{
   margin: 0 0 16px 0;
   max-width: 640px;
   line-height: 1.5;
-  font-weight: 500;
+  font-weight: 400;
 }}
 
 @media (max-width: 400px) {{
   .block-container {{ padding-left: 16px; padding-right: 16px; }}
   h1, .fs-title {{ font-size: 28px !important; }}
-  .fs-chip-value, .fs-strat-score-num {{ font-size: 22px; }}
+  .fs-chip-value, .fs-overall-num {{ font-size: 24px; }}
 }}
 </style>
         """,

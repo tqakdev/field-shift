@@ -37,10 +37,10 @@ def hero(
 
 
 def section(title: str, subtitle: str | None = None, *, step: int | None = None) -> None:
-    """Numbered section header with optional subtitle."""
+    """Light section heading; optional small grey step number (no badge)."""
     clean = title.lstrip()
     step_html = (
-        f'<span class="fs-step">{step:02d}</span>&nbsp;' if step is not None else ""
+        f'<span class="fs-step">{step:02d}</span> ' if step is not None else ""
     )
     st.markdown(
         f'<div class="fs-section">{step_html}'
@@ -52,10 +52,9 @@ def section(title: str, subtitle: str | None = None, *, step: int | None = None)
 
 
 def fact_chips(chips: list[dict[str, str]]) -> None:
-    """Render equal-height fact chips with source inside each card.
+    """Metric-style fact blocks (no borders): label, value, meaning, source.
 
     Each chip: label, value, optional meaning (orientation), help/source.
-    Uses one CSS grid so captions never overlap neighboring cards.
     """
     if not chips:
         return
@@ -174,55 +173,47 @@ def weights_bar(weights: dict[str, float]) -> None:
 def demo_field_cards(
     cards: list[dict[str, Any]],
 ) -> str | None:
-    """Render equal-height demo cards; return clicked field id or None.
+    """Render demo field cards with one thin border each; return clicked id.
 
     Each card dict: id, name, climate, country, rotation, thumb_path.
-    Layout uses aligned rows (thumbs → copy → buttons) so buttons share a baseline.
     """
     if not cards:
         return None
 
-    n = len(cards)
-    # Row 1 — thumbnails (fixed aspect)
-    cols = st.columns(n, gap="medium")
+    clicked: str | None = None
+    cols = st.columns(len(cards), gap="medium")
     for col, card in zip(cols, cards, strict=True):
         with col:
-            thumb = card.get("thumb_path")
-            if thumb:
-                st.image(thumb, use_container_width=True)
-            else:
+            with st.container(border=True):
                 st.markdown(
-                    '<div class="fs-demo-thumb-empty"></div>',
+                    '<div class="fs-demo-bordered" aria-hidden="true"></div>',
                     unsafe_allow_html=True,
                 )
-
-    # Row 2 — copy with equal min-heights via CSS classes
-    cols = st.columns(n, gap="medium")
-    for col, card in zip(cols, cards, strict=True):
-        with col:
-            st.markdown(
-                f"""
+                thumb = card.get("thumb_path")
+                if thumb:
+                    st.image(thumb, use_container_width=True)
+                else:
+                    st.markdown(
+                        '<div class="fs-demo-thumb-empty"></div>',
+                        unsafe_allow_html=True,
+                    )
+                st.markdown(
+                    f"""
 <div class="fs-demo-copy">
   <p class="fs-demo-card-title">{card["name"]}</p>
   <p class="fs-demo-card-meta">{card["climate"]} · {card["country"]}</p>
   <p class="fs-demo-card-rot">Rotation · {card["rotation"]}</p>
 </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-    # Row 3 — buttons on one baseline
-    clicked: str | None = None
-    cols = st.columns(n, gap="medium")
-    for col, card in zip(cols, cards, strict=True):
-        with col:
-            if st.button(
-                "Open field report",
-                key=f"demo-{card['id']}",
-                use_container_width=True,
-                type="primary",
-            ):
-                clicked = card["id"]
+                    """,
+                    unsafe_allow_html=True,
+                )
+                if st.button(
+                    "Open field report",
+                    key=f"demo-{card['id']}",
+                    use_container_width=True,
+                    type="primary",
+                ):
+                    clicked = card["id"]
     return clicked
 
 

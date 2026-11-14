@@ -72,10 +72,11 @@ def generate_strategies(
     if not scored:
         return StrategyResult(field_id=field_id, strategies=[])
 
-    current_total = next(
-        (sc.total for cand, sc, _ in scored if cand["id"] == "current"),
-        scored[0][1].total,
+    current_pair = next(
+        ((cand, sc) for cand, sc, _ in scored if cand["id"] == "current"),
+        (scored[0][0], scored[0][1]),
     )
+    current_scores = current_pair[1]
     conf = confidence_label(
         adj, [sc for _, sc, _ in scored], [c["sequence"] for c, _, _ in scored]
     )
@@ -100,7 +101,7 @@ def generate_strategies(
                     for cid in cand["sequence"]
                 ],
                 scores=sc,
-                delta_vs_current={"total": round(sc.total - current_total, 4)},
+                delta_vs_current=_deltas_vs_current(sc, current_scores),
                 why=expl["why"],
                 evidence=expl["evidence"],
                 benefits=benefits,
@@ -113,3 +114,23 @@ def generate_strategies(
         )
     cards = assign_tiers(cards, weights=request.weights)
     return StrategyResult(field_id=field_id, strategies=cards)
+
+
+_CRITERION_KEYS = (
+    "water",
+    "soil_health",
+    "erosion",
+    "pest_break",
+    "climate_fit",
+    "income",
+)
+
+
+def _deltas_vs_current(scores: Any, current: Any) -> dict[str, float]:
+    """Per-criterion and total delta vs the farmer's current rotation scores."""
+    out = {
+        key: round(float(getattr(scores, key)) - float(getattr(current, key)), 4)
+        for key in _CRITERION_KEYS
+    }
+    out["total"] = round(float(scores.total) - float(current.total), 4)
+    return out

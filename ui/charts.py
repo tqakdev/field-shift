@@ -191,13 +191,14 @@ def scores_bar(scores: ScoreSet, *, height: int = 175) -> go.Figure:
         ("Climate", scores.climate_fit, SCORE_COLORS["climate_fit"]),
         ("Income", scores.income, SCORE_COLORS["income"]),
     ]
+    pcts = [int(round(max(0.0, min(1.0, i[1])) * 100)) for i in items]
     fig = go.Figure(
         go.Bar(
             y=[i[0] for i in items],
-            x=[i[1] for i in items],
+            x=pcts,
             orientation="h",
             marker_color=[i[2] for i in items],
-            text=[f"{i[1]:.2f}" for i in items],
+            text=[str(p) for p in pcts],
             textposition="outside",
             cliponaxis=False,
         )
@@ -206,7 +207,7 @@ def scores_bar(scores: ScoreSet, *, height: int = 175) -> go.Figure:
         margin={"l": 58, "r": 36, "t": 6, "b": 6},
         height=height,
         xaxis={
-            "range": [0, 1.2],
+            "range": [0, 120],
             "title": None,
             "showticklabels": False,
             "gridcolor": SIDEBAR,

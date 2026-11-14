@@ -26,9 +26,16 @@ hero(
 )
 
 section("Pipeline")
-st.plotly_chart(
-    pipeline_figure(), use_container_width=True, config={"displayModeBar": False}
-)
+with st.container(border=True):
+    st.markdown(
+        '<div class="fs-chart-wrap" aria-hidden="true"></div>',
+        unsafe_allow_html=True,
+    )
+    st.plotly_chart(
+        pipeline_figure(),
+        use_container_width=True,
+        config={"displayModeBar": False},
+    )
 st.markdown(
     """
 1. Reduce satellite & weather datasets to **field × month** values.  
@@ -87,6 +94,14 @@ st.dataframe(
             "Constant": "BEST_FIT_MIN_DELTA",
             "Value": th.BEST_FIT_MIN_DELTA,
             "Meaning": "Best fit must beat current by at least this",
+        },
+        {
+            "Constant": "DELTA_NEUTRAL_THRESHOLD",
+            "Value": th.DELTA_NEUTRAL_THRESHOLD,
+            "Meaning": (
+                "If |overall delta| is below this, the card shows "
+                "“About the same as yours” (no arrow)"
+            ),
         },
         {
             "Constant": "WORTH_CONSIDERING_OF_BEST",

@@ -9,15 +9,20 @@ Enforce with `tests/test_design.py`.
 - Section separation: **48 px** space + heading. No horizontal rules through content.
 - Spacing tokens only: **8, 16, 24, 32, 48 px**.
 - Grouping: 8–16 px inside a group; 32–48 px between groups.
-- Cards (1 px `#E3DDCF` border, 8 px radius, 16–24 px padding, **no shadow**) only for:
-  fact cards, strategy cards, frost card. Never nest a card in a card.
+- Flat page (Streamlit demo style): whitespace, no page/section boxes.
+- Borders only for: **strategy cards**, **charts**, and **Home demo field cards**.
+  Never nest a card in a card (no boxed score panel inside a strategy card).
+- Fact chips are metric-style (no border). Cards that do border: 1 px `#E8E6E0`,
+  **10 px** radius, **no shadow**.
 - Prose max ~70 characters (~**640 px**) even in wide layout.
 - Responsive: columns stack below **700 px**; nothing overflows at **400 px**.
 
 ## Typography
 
 - One sans-serif family (Source Sans 3).
-- Scale: page title **32**, section **22**, card value **26** bold, body **16**, caption **13**.
+- Scale: page title **32**, section **28** weight 400–500, metric value **28–32**,
+  body **16**, caption **13**.
+- Section headings: **48 px** space above; optional small grey step text (`05`), no HR.
 - Line height: **1.5** body, **1.2** headings.
 - Sentence case. No all-caps except tiny overlines (eyebrow).
 - No monospace outside code.
@@ -26,16 +31,16 @@ Enforce with `tests/test_design.py`.
 
 | Token | Hex |
 |-------|-----|
-| background | `#FBF8F2` |
+| background | `#FAFAF8` |
 | surface | `#FFFFFF` |
-| sidebar | `#F0EAD9` |
+| sidebar | `#F0EEE8` (same family, slightly darker) |
 | text | `#2B2B2B` |
 | muted | `#5C5C5C` (AA-safe) |
 | primary | `#3F7D3A` |
 | warning | `#B26A00` |
 | danger | `#B23A3A` |
 | info | `#3A7CA5` |
-| card border | `#E3DDCF` |
+| card border | `#E8E6E0` |
 
 - WCAG 2.2 AA: body ≥ 4.5:1; large text / chart marks ≥ 3:1.
 - Status is never colour-only: always **icon + word** (e.g. “✓ Best fit”).
@@ -74,9 +79,17 @@ Enforce with `tests/test_design.py`.
 
 ## Strategy cards
 
+- Tier only as the **group heading**; Best fit also gets a small green badge on the card.
+- Title: one-line rotation with months (no pill row).
+- One farmer sentence from criterion diffs vs current — never engine wording
+  (“within 0.05…”, “suitable option”, raw ids).
+- Overall is metric-style. If `|delta| < DELTA_NEUTRAL_THRESHOLD` (0.02), show
+  “About the same as yours” (grey, no arrow); else signed “+0.06 vs yours”.
+- Face shows top **3** differing criteria; all six criteria in the expander bar chart
+  as **0–100** integers only. Bands: Strong ≥75, Good ≥55, Fair ≥35, else Weak.
+- Confidence: plain “Confidence: medium” with dots — no outlined pill.
+- Expander label: “Why, evidence and risks”. Equal-height cards in a row.
 - Always show **Your rotation today** (baseline) before advised options when present.
-- Overall label is **Overall** only — no Strong/Good/Fair next to it (tiers carry that meaning).
-- Peer cards share equal structure (reserved bands) so demos compare cleanly.
 - No empty “—” values in fact cards — use plain language (e.g. “Rarely frosts”).
 
 ## Audit leftovers (could not fully eliminate)
