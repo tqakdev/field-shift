@@ -6,6 +6,21 @@ import math
 from typing import Any
 
 
+def polygon_from_point(lat: float, lon: float, size_ha: float) -> dict[str, Any]:
+    """Build an approximate square GeoJSON polygon of ``size_ha`` around a point."""
+    side_m = (size_ha * 10_000) ** 0.5
+    dlat = (side_m / 2) / 111_320
+    dlon = (side_m / 2) / (111_320 * max(0.2, abs(math.cos(math.radians(lat)))))
+    ring = [
+        [lon - dlon, lat - dlat],
+        [lon + dlon, lat - dlat],
+        [lon + dlon, lat + dlat],
+        [lon - dlon, lat + dlat],
+        [lon - dlon, lat - dlat],
+    ]
+    return {"type": "Polygon", "coordinates": [ring]}
+
+
 def polygon_rings(polygon: dict[str, Any]) -> list[list[list[float]]]:
     """Return exterior (+ holes) rings from a GeoJSON Polygon or MultiPolygon."""
     geom = polygon.get("geometry", polygon)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Precompute demo field caches for Streamlit (Phase 4).
 
-For Iowa, Kansas, Punjab:
+For Iowa, Cambridgeshire (UK), Punjab:
   extract → features → anomalies → default strategies
   write fieldshift/cache/demo_{id}.json
   download Sentinel-2 NDVI + RGB timelapse GIFs
@@ -42,10 +42,10 @@ DEMOS = {
         "water_access": "rainfed",
         "size_ha": 16.0,
     },
-    "kansas": {
+    "uk": {
         "rotation": ["winter_wheat"],
         "water_access": "rainfed",
-        "size_ha": 20.0,
+        "size_ha": 25.0,
     },
     "punjab": {
         "rotation": ["rice", "winter_wheat"],

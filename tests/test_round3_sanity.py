@@ -129,7 +129,7 @@ def test_demo_field_sanity_all() -> None:
             "water": "rainfed",
             "pattern": "summer",
         },
-        "kansas": {
+        "uk": {
             "rotation": ["winter_wheat"],
             "water": "rainfed",
             "pattern": "winter_wheat",
@@ -202,6 +202,6 @@ def test_demo_field_sanity_all() -> None:
 
     assert trends["punjab"] < trends["iowa"]
     print(
-        f"sanity GRACE iowa={trends['iowa']:.2f} kansas={trends['kansas']:.2f} "
+        f"sanity GRACE iowa={trends['iowa']:.2f} uk={trends['uk']:.2f} "
         f"punjab={trends['punjab']:.2f}"
     )

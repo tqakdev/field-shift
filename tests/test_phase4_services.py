@@ -56,7 +56,7 @@ def test_generate_strategies_rescore_from_cache() -> None:
 def test_list_demo_fields_three() -> None:
     fields = list_demo_fields()
     ids = {f.id for f in fields}
-    assert {"iowa", "kansas", "punjab"} <= ids
+    assert {"iowa", "uk", "punjab"} <= ids
 
 
 def test_polygon_area_bounds() -> None:

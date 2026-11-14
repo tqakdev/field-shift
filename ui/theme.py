@@ -30,7 +30,7 @@ SCORE_COLORS = {
     "income": "#6B5B3E",
 }
 
-_THEME_VERSION = "nasa-v5"
+_THEME_VERSION = "nasa-v7"
 
 
 def inject_theme() -> None:
@@ -204,7 +204,8 @@ p, .stMarkdown p {{
   border-top: 3px solid {NASA_BLUE};
   border-radius: 2px;
   padding: 0.85rem 0.95rem;
-  min-height: 5.2rem;
+  min-height: 8.5rem;
+  height: 100%;
 }}
 .fs-chip-label {{
   font-size: 0.72rem;
@@ -216,11 +217,154 @@ p, .stMarkdown p {{
   font-weight: 500;
 }}
 .fs-chip-value {{
-  font-size: 1.02rem;
+  font-size: 1.15rem;
   font-weight: 600;
   color: {INK};
+  margin: 0 0 0.35rem 0;
+  line-height: 1.25;
+  font-family: "IBM Plex Mono", monospace;
+}}
+.fs-chip-meaning {{
+  font-size: 0.78rem;
+  color: {MUTED};
   margin: 0;
-  line-height: 1.3;
+  line-height: 1.35;
+}}
+
+/* Compact strategy cards */
+.fs-strat {{
+  margin: 0 0 0.15rem 0;
+}}
+.fs-strat-role {{
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: {MUTED};
+  margin: 0 0 0.25rem 0;
+}}
+.fs-strat-title {{
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: {INK};
+  margin: 0 0 0.15rem 0;
+  line-height: 1.25;
+}}
+.fs-strat-summary {{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin: 0.35rem 0 0.55rem 0;
+  padding: 0.55rem 0.65rem;
+  background: {PANEL};
+  border: 1px solid {HAIRLINE};
+  border-radius: 2px;
+}}
+.fs-strat-score {{
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+}}
+.fs-strat-score-num {{
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 1.55rem;
+  font-weight: 700;
+  color: {INK};
+  line-height: 1;
+}}
+.fs-strat-score-label {{
+  font-size: 0.72rem;
+  color: {MUTED};
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}}
+.fs-strat-meta {{
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}}
+.fs-card-delta {{
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.12rem 0.4rem;
+  border-radius: 2px;
+}}
+.fs-card-delta.up {{ color: {EARTH}; background: #EDF7F1; }}
+.fs-card-delta.down {{ color: {NASA_RED}; background: #FDF0EF; }}
+.fs-card-delta.flat {{ color: {MUTED}; background: {PANEL}; }}
+.fs-card-note {{
+  font-size: 0.75rem;
+  color: {MUTED};
+  margin: 0 0 0.4rem 0;
+}}
+
+/* 2-col score grid inside each card */
+.fs-sc-grid {{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.45rem 0.65rem;
+  margin: 0.15rem 0 0.45rem 0;
+}}
+.fs-sc {{
+  min-width: 0;
+  cursor: help;
+}}
+.fs-sc-top {{
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem;
+  margin-bottom: 0.12rem;
+}}
+.fs-sc-name {{
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: {INK};
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}}
+.fs-sc-val {{
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: {INK};
+  flex-shrink: 0;
+}}
+.fs-sc-track {{
+  height: 5px;
+  background: {PANEL};
+  border: 1px solid {HAIRLINE};
+  border-radius: 1px;
+  overflow: hidden;
+}}
+.fs-sc-fill {{
+  height: 100%;
+  border-radius: 1px;
+  min-width: 2px;
+}}
+.fs-sc-band {{
+  display: block;
+  margin-top: 0.12rem;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: {MUTED};
+}}
+.fs-band-strong {{ color: {EARTH}; }}
+.fs-band-good {{ color: {NASA_BLUE}; }}
+.fs-band-fair {{ color: {SOIL}; }}
+.fs-band-needs-attention {{ color: {NASA_RED}; }}
+
+@media (max-width: 640px) {{
+  .fs-sc-grid {{ grid-template-columns: 1fr; }}
 }}
 
 .fs-banner {{

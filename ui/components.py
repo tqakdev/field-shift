@@ -51,15 +51,23 @@ def section(title: str, subtitle: str | None = None, *, step: int | None = None)
 
 
 def fact_chips(chips: list[dict[str, str]]) -> None:
-    """Render a row of fact chips. Each chip: label, value, optional help/source."""
+    """Render fact chips with value + plain-language meaning.
+
+    Each chip: label, value, optional meaning (orientation), help/source.
+    """
     cols = st.columns(len(chips) if chips else 1)
     for col, chip in zip(cols, chips, strict=False):
         with col:
+            meaning = chip.get("meaning") or ""
+            meaning_html = (
+                f'<p class="fs-chip-meaning">{meaning}</p>' if meaning else ""
+            )
             st.markdown(
                 f"""
 <div class="fs-chip">
   <p class="fs-chip-label">{chip.get("label", "")}</p>
   <p class="fs-chip-value">{chip.get("value", "")}</p>
+  {meaning_html}
 </div>
                 """,
                 unsafe_allow_html=True,

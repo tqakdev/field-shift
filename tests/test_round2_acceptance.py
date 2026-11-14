@@ -1,4 +1,4 @@
-"""Phase 3 round 2 acceptance: Punjab phenology/water-wise, Kansas candidates, Iowa cover."""
+"""Phase 3 round 2 acceptance: Punjab phenology/water-wise, UK candidates, Iowa cover."""
 
 from __future__ import annotations
 
@@ -69,8 +69,8 @@ def test_punjab_water_wise_beats_current_on_water_and_total() -> None:
     assert rice_w < pulse_w
 
 
-def test_kansas_sorghum_or_field_pea_not_lentil() -> None:
-    tidy, daily = _load("kansas")
+def test_uk_sorghum_or_field_pea_not_lentil() -> None:
+    tidy, daily = _load("uk")
     feats = compute_features(tidy, daily, current_rotation=["winter_wheat"])
     cands = build_candidates(
         ["winter_wheat"], feats, water_access="rainfed", weights=PriorityWeights()

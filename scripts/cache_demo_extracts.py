@@ -23,10 +23,10 @@ DEMOS = {
         "water_access": "rainfed",
         "size_ha": 16.0,
     },
-    "kansas": {
+    "uk": {
         "rotation": ["winter_wheat"],
         "water_access": "rainfed",
-        "size_ha": 20.0,
+        "size_ha": 25.0,
     },
     "punjab": {
         "rotation": ["rice", "winter_wheat"],

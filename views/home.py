@@ -8,6 +8,7 @@ from typing import Any
 import streamlit as st
 from fieldshift.cache import CACHE_DIR
 from fieldshift.data.ee_client import init_ee
+from fieldshift.geo import polygon_area_ha, polygon_from_point
 from fieldshift.models import FieldConditions
 from fieldshift.services import analyze_field, list_demo_fields, using_mock_data
 from streamlit_folium import st_folium
@@ -17,7 +18,7 @@ from ui.mock_banner import show_mock_banner
 
 _ROTATION_LABEL = {
     "iowa": "Maize → Soybean",
-    "kansas": "Winter wheat",
+    "uk": "Winter wheat",
     "punjab": "Rice → Winter wheat",
 }
 
@@ -72,42 +73,117 @@ if opened_id:
 
 section(
     "Analyze my own field",
-    "Draw a polygon on cropland (1–5000 ha). Live runs use ~10 years of Earth observations.",
+    "Draw a polygon, or enter coordinates — we’ll outline a field and map it for you.",
 )
 step_cols = st.columns(3)
 with step_cols[0]:
-    st.markdown("**01 — Draw**  \nOutline your field on the imagery.")
+    st.markdown("**01 — Locate**  \nDraw on the map or enter lat/lon.")
 with step_cols[1]:
     st.markdown("**02 — Describe**  \nRotation, soil, water, priorities.")
 with step_cols[2]:
     st.markdown("**03 — Compare**  \nScored rotation options with evidence.")
 
-m = field_map(draw=True, center=(42.0, -93.6), zoom=5)
-map_state = st_folium(m, width=None, height=400, key="home-draw")
+locate = st.radio(
+    "How do you want to locate the field?",
+    ["Draw on map", "Enter coordinates"],
+    horizontal=True,
+    key="locate-mode",
+)
 
 drawn: dict[str, Any] | None = None
-if map_state and map_state.get("last_active_drawing"):
-    drawn = map_state["last_active_drawing"].get("geometry")
+coord_poly: dict[str, Any] | None = None
+
+if locate == "Enter coordinates":
+    st.caption(
+        "Enter the centre of your field. We build a square outline of the size you choose "
+        "and show it on the map below."
+    )
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        lat = st.number_input(
+            "Latitude",
+            min_value=-90.0,
+            max_value=90.0,
+            value=52.205,
+            step=0.001,
+            format="%.5f",
+            help="Degrees north (+) / south (−). Example: 52.205 for Cambridgeshire.",
+            key="coord_lat",
+        )
+    with c2:
+        lon = st.number_input(
+            "Longitude",
+            min_value=-180.0,
+            max_value=180.0,
+            value=0.085,
+            step=0.001,
+            format="%.5f",
+            help="Degrees east (+) / west (−). Example: 0.085 near Cambridge, UK.",
+            key="coord_lon",
+        )
+    with c3:
+        size_ha = st.number_input(
+            "Field size (ha)",
+            min_value=1.0,
+            max_value=5000.0,
+            value=25.0,
+            step=1.0,
+            help="Approximate field area. We draw a square of this size around the point.",
+            key="coord_size_ha",
+        )
+
+    coord_poly = polygon_from_point(float(lat), float(lon), float(size_ha))
+    area = polygon_area_ha(coord_poly)
+    st.markdown(
+        f"**Field outline** · centre `{lat:.5f}, {lon:.5f}` · "
+        f"≈ **{area:.1f} ha** square"
+    )
+    m = field_map(coord_poly, center=(float(lat), float(lon)), zoom=14, draw=False)
+    st_folium(m, width=None, height=420, key=f"home-coords-{lat:.4f}-{lon:.4f}-{size_ha:.0f}")
+    st.caption(
+        "Adjust coordinates or size to move/resize the outline. "
+        "When it looks right, run analysis below."
+    )
+else:
+    m = field_map(draw=True, center=(42.0, -93.6), zoom=5)
+    map_state = st_folium(m, width=None, height=400, key="home-draw")
+    if map_state and map_state.get("last_active_drawing"):
+        drawn = map_state["last_active_drawing"].get("geometry")
+    if drawn:
+        st.caption(
+            f"Polygon captured · ≈ {polygon_area_ha(drawn):.1f} ha — ready to analyze."
+        )
+
+target_poly = coord_poly if locate == "Enter coordinates" else drawn
+field_name = (
+    f"Field @ {st.session_state.get('coord_lat', 0):.3f}, "
+    f"{st.session_state.get('coord_lon', 0):.3f}"
+    if locate == "Enter coordinates"
+    else "Your field"
+)
 
 if not live:
     st.button("Live analysis unavailable (demo mode)", disabled=True)
 else:
-    clicked = st.button(
-        "Analyze drawn field",
-        disabled=drawn is None,
-        type="primary",
+    ready = target_poly is not None
+    label = (
+        "Analyze field from coordinates"
+        if locate == "Enter coordinates"
+        else "Analyze drawn field"
     )
-    if clicked:
+    clicked = st.button(label, disabled=not ready, type="primary")
+    if clicked and target_poly is not None:
         try:
             progress = st.progress(0, text="Analyzing 10 years of NASA data (~60 s)")
             progress.progress(20, text="Querying Earth Engine & NASA POWER…")
             with st.spinner("Analyzing 10 years of NASA data (~60 s)"):
                 conditions = _cached_analyze(
-                    json.dumps(drawn, sort_keys=True), "Your field"
+                    json.dumps(target_poly, sort_keys=True),
+                    field_name,
                 )
             progress.progress(100, text="Analysis complete")
             st.session_state["field_id"] = "custom"
-            st.session_state["field_polygon"] = drawn
+            st.session_state["field_polygon"] = target_poly
             st.session_state["custom_conditions"] = conditions
             st.session_state["_rotation_field"] = "custom"
             st.session_state["current_rotation"] = ["maize", "soybean"]
@@ -120,8 +196,5 @@ else:
         except Exception as exc:  # noqa: BLE001
             st.error(
                 f"Earth Engine / POWER analysis failed: {exc}. "
-                "Check credentials and try a smaller cropland polygon."
+                "Check credentials and try a smaller cropland area."
             )
-
-if drawn:
-    st.caption("Polygon captured — ready to analyze.")

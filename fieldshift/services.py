@@ -28,7 +28,7 @@ from fieldshift.models import (
 
 _DEMO_DEFAULTS = {
     "iowa": {"rotation": ["maize", "soybean"], "water_access": "rainfed"},
-    "kansas": {"rotation": ["winter_wheat"], "water_access": "rainfed"},
+    "uk": {"rotation": ["winter_wheat"], "water_access": "rainfed"},
     "punjab": {"rotation": ["rice", "winter_wheat"], "water_access": "irrigated"},
 }
 

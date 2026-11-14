@@ -31,21 +31,9 @@ def _require_ee() -> Any:
 
 def polygon_from_point(lat: float, lon: float, size_ha: float) -> dict[str, Any]:
     """Build an approximate square GeoJSON polygon of ``size_ha`` around a point."""
-    # 1 ha ≈ 100 m × 100 m; side length in degrees ~ size-dependent at mid-latitudes
-    side_m = (size_ha * 10_000) ** 0.5
-    # rough meters → degrees (lon scaled by cos(lat))
-    import math
+    from fieldshift.geo import polygon_from_point as _from_point
 
-    dlat = (side_m / 2) / 111_320
-    dlon = (side_m / 2) / (111_320 * max(0.2, abs(math.cos(math.radians(lat)))))
-    ring = [
-        [lon - dlon, lat - dlat],
-        [lon + dlon, lat - dlat],
-        [lon + dlon, lat + dlat],
-        [lon - dlon, lat + dlat],
-        [lon - dlon, lat - dlat],
-    ]
-    return {"type": "Polygon", "coordinates": [ring]}
+    return _from_point(lat, lon, size_ha)
 
 
 def _geom(ee: Any, polygon: dict[str, Any]) -> Any:

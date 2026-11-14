@@ -50,42 +50,55 @@ def conditions_figure(conditions: FieldConditions) -> go.Figure:
             layer="below",
         )
 
+    ndvi_vals = [p.ndvi for p in profile]
+    rain_vals = [p.rain_mm for p in profile]
+    wb_vals = [p.water_balance_mm for p in profile]
+
     fig.add_trace(
         go.Scatter(
             x=xs,
-            y=[p.ndvi for p in profile],
-            name="Plant greenness",
+            y=ndvi_vals,
+            name="Plant greenness (0–1)",
             mode="lines+markers",
             line={"color": EARTH, "width": 2.5},
             marker={"size": 6, "color": EARTH},
+            hovertemplate=(
+                "Plant greenness %{y:.2f}<br>"
+                "Leafiness from space (higher = greener)<extra></extra>"
+            ),
         )
     )
     fig.add_trace(
         go.Bar(
             x=xs,
-            y=[p.rain_mm for p in profile],
-            name="Rain",
+            y=rain_vals,
+            name="Rain (mm)",
             marker_color="rgba(47, 111, 237, 0.40)",
             yaxis="y2",
+            hovertemplate="Rain %{y:.0f} mm that month<extra></extra>",
         )
     )
     fig.add_trace(
         go.Scatter(
             x=xs,
-            y=[p.water_balance_mm for p in profile],
-            name="Water balance",
+            y=wb_vals,
+            name="Water balance (mm)",
             mode="lines",
             line={"color": NASA_BLUE, "width": 2, "dash": "dash"},
             yaxis="y2",
+            hovertemplate=(
+                "Water balance %{y:.0f} mm<br>"
+                "Rain minus evaporative demand (negative = short)<extra></extra>"
+            ),
         )
     )
 
     fig.update_layout(
-        margin={"l": 48, "r": 48, "t": 28, "b": 36},
-        height=390,
+        margin={"l": 56, "r": 56, "t": 36, "b": 40},
+        height=400,
         legend={
             "orientation": "h",
-            "y": 1.14,
+            "y": 1.16,
             "x": 0,
             "bgcolor": "rgba(0,0,0,0)",
         },
@@ -93,15 +106,20 @@ def conditions_figure(conditions: FieldConditions) -> go.Figure:
             "tickmode": "array",
             "tickvals": xs,
             "ticktext": MONTH_LABELS,
-            "title": None,
+            "title": "Month",
             "gridcolor": PANEL,
         },
         yaxis={
-            "title": "Plant greenness",
+            "title": "Plant greenness (0–1)",
             "range": [0, 1],
             "gridcolor": PANEL,
         },
-        yaxis2={"title": "mm", "overlaying": "y", "side": "right", "showgrid": False},
+        yaxis2={
+            "title": "Rain / water balance (mm)",
+            "overlaying": "y",
+            "side": "right",
+            "showgrid": False,
+        },
         plot_bgcolor=PAPER,
         paper_bgcolor="rgba(0,0,0,0)",
         font=_FONT,

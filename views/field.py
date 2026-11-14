@@ -31,6 +31,7 @@ from ui.components import (
     section,
     weights_bar,
 )
+from ui.explainers import CRITERION_HELP, FACT_HELP, chart_how_to_read, score_band
 from ui.map import field_map
 from ui.mock_banner import show_mock_banner
 from ui.source_caption import source_caption
@@ -38,13 +39,13 @@ from ui.strategy_cards import render_strategy_cards
 
 _DEFAULT_ROTATION = {
     "iowa": ["maize", "soybean"],
-    "kansas": ["winter_wheat"],
+    "uk": ["winter_wheat"],
     "punjab": ["rice", "winter_wheat"],
     "custom": ["maize", "soybean"],
 }
 _DEFAULT_WATER = {
     "iowa": "rainfed",
-    "kansas": "rainfed",
+    "uk": "rainfed",
     "punjab": "irrigated",
     "custom": "rainfed",
 }
@@ -188,30 +189,40 @@ chips = [
         "value": feat.bare_months_label.split("(")[0].strip()
         if feat.bare_months_label
         else "—",
+        "meaning": FACT_HELP["bare"],
         "help": f"source: Sentinel-2 NDVI · data through {ndvi_through or '—'}",
     },
     {
         "label": "Frost-free days",
-        "value": f"{feat.frost_free_days:.0f}" if feat.frost_free_days else "—",
+        "value": f"{feat.frost_free_days:.0f} days"
+        if feat.frost_free_days
+        else "—",
+        "meaning": FACT_HELP["frost"],
         "help": f"source: NASA POWER T2M_MIN · data through {power_through or '—'}",
     },
     {
         "label": "Rain (mm/yr)",
-        "value": f"≈ {feat.rain_annual_mm:.0f}" if feat.rain_annual_mm else "—",
+        "value": f"≈ {feat.rain_annual_mm:.0f} mm"
+        if feat.rain_annual_mm
+        else "—",
+        "meaning": FACT_HELP["rain"],
         "help": f"source: rain_best · data through {rain_through or '—'}",
     },
     {
         "label": "Regional water storage",
         "value": grace_label,
+        "meaning": FACT_HELP["grace"],
         "help": f"source: GRACE/FO · data through {grace_through or '—'}",
     },
 ]
 fact_chips(chips)
 
+with st.expander("How to read this chart", expanded=False):
+    st.markdown(chart_how_to_read())
 st.plotly_chart(conditions_figure(conditions), use_container_width=True)
 st.caption(
-    "Shaded brown months ≈ usually bare · light red ≈ growing-season stress. "
-    "Legend: Plant greenness · Rain · Water balance."
+    "Plant greenness (line) · Rain mm (bars) · Water balance (dashed). "
+    "Tan shade ≈ usually bare · light red ≈ growing-season stress."
 )
 source_caption("Sentinel-2 / SMAP / rain_best / water balance", rain_through)
 
@@ -278,6 +289,10 @@ with right:
     )
 
 st.markdown("**What matters most to you?**")
+st.caption(
+    "Sliders weight the overall score (0 = ignore, 1 = normal, 2 = double). "
+    "Hover a label’s ? for what each criterion means."
+)
 w_meta = [
     ("water", "Water"),
     ("soil_health", "Soil health"),
@@ -290,13 +305,23 @@ w_cols = st.columns(3)
 weights: dict[str, float] = {}
 for i, (key, label) in enumerate(w_meta):
     with w_cols[i % 3]:
-        weights[key] = st.slider(label, 0.0, 2.0, 1.0, 0.1, key=f"w-{field_id}-{key}")
+        help_txt = CRITERION_HELP.get(key, {}).get("detail", "")
+        weights[key] = st.slider(
+            label,
+            0.0,
+            2.0,
+            1.0,
+            0.1,
+            key=f"w-{field_id}-{key}",
+            help=help_txt,
+        )
 weights_bar(weights)
 
 # --- 4 + 5 Options / what-if (live re-score) ---
 section(
     "Your options",
-    "Scored for your priorities — updates as you move the sliders.",
+    "Each card shows an overall score (0–1) and six criteria. "
+    "Higher is better. Bars update when you change priorities or climate sliders.",
     step=4,
 )
 
@@ -321,15 +346,15 @@ def _options_block() -> None:
     cards = result.strategies
     if cards:
         top = next((c for c in cards if c.id != "current"), cards[0])
+        band, _ = score_band(top.scores.total)
+        delta = top.delta_vs_current.get("total")
         delta_bit = (
-            f", {top.delta_vs_current.get('total', 0):+.2f} vs your current rotation"
-            if top.delta_vs_current.get("total") is not None
-            else ""
+            f", {delta:+.2f} vs your current rotation" if delta is not None else ""
         )
         why_bit = top.why.split(".")[0] + "." if top.why else ""
         recommendation_banner(
             f"<em>{top.name}</em> scores highest for your priorities "
-            f"({top.scores.total:.2f}{delta_bit}). {why_bit}"
+            f"({top.scores.total:.2f} · {band}{delta_bit}). {why_bit}"
         )
         render_strategy_cards(cards, show_climate_delta=climate_shifted)
 
@@ -346,6 +371,7 @@ def _options_block() -> None:
         float(st.session_state["rain_mult"]),
         0.05,
         key=f"rain-{field_id}",
+        help="1.0 = today’s rainfall. 0.8 ≈ 20% drier years; 1.2 ≈ 20% wetter.",
     )
     st.session_state["temp_offset"] = st.slider(
         "Temperature offset (°C)",
@@ -354,6 +380,7 @@ def _options_block() -> None:
         float(st.session_state["temp_offset"]),
         0.5,
         key=f"temp-{field_id}",
+        help="Extra warming on top of today’s climate (e.g. +2 °C warmer seasons).",
     )
     if climate_shifted:
         st.caption(

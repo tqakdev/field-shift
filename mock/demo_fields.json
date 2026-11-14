@@ -39,38 +39,38 @@
     }
   },
   {
-    "id": "kansas",
-    "name": "South-central Kansas (demo)",
-    "country": "USA",
-    "climate_label": "Semi-arid \u2014 winter wheat",
+    "id": "uk",
+    "name": "Cambridgeshire (demo)",
+    "country": "United Kingdom",
+    "climate_label": "Temperate oceanic \u2014 winter wheat",
     "expected_rotation": [
       "winter_wheat"
     ],
     "expected_phenology": "winter_wheat",
-    "notes": "Edwards County KS (~20 ha at 38.00,-99.50). CDL winter-wheat dominant; S2 phenology winter Oct\u2013Jun, fallow Jul\u2013Sep.",
+    "notes": "~25 ha arable west of Cambridge (52.205, 0.085). Winter wheat system; temperate oceanic rainfall.",
     "polygon": {
       "type": "Polygon",
       "coordinates": [
         [
           [
-            -99.50254905766582,
-            37.99799131514777
+            0.08133544659279264,
+            52.202754222062524
           ],
           [
-            -99.49745094233418,
-            37.99799131514777
+            0.08866455340720737,
+            52.202754222062524
           ],
           [
-            -99.49745094233418,
-            38.00200868485223
+            0.08866455340720737,
+            52.20724577793747
           ],
           [
-            -99.50254905766582,
-            38.00200868485223
+            0.08133544659279264,
+            52.20724577793747
           ],
           [
-            -99.50254905766582,
-            37.99799131514777
+            0.08133544659279264,
+            52.202754222062524
           ]
         ]
       ]
