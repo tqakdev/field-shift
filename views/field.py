@@ -7,6 +7,7 @@ from pathlib import Path
 
 import streamlit as st
 from fieldshift.cache import read_json
+from fieldshift.engine.crops import crop_by_id
 from fieldshift.engine.slots import (
     crops_for_slot,
     default_rotation_for_slots,
@@ -31,7 +32,7 @@ from fieldshift.services import (
 )
 from PIL import Image
 from streamlit_folium import st_folium
-from ui.charts import conditions_figure
+from ui.charts import conditions_figure, conditions_takeaway
 from ui.components import (
     fact_chips,
     recommendation_banner,
@@ -83,6 +84,13 @@ _MONTHS = [
 @st.cache_data(ttl=3600, show_spinner=False)
 def _cached_conditions(field_id: str) -> FieldConditions:
     return load_demo_conditions(field_id)
+
+
+@st.cache_data(show_spinner=False)
+def _cached_demo_conditions_figure(field_id: str, theme_ver: str = "design-v1") -> object:
+    """Seasonal chart for demo fields — skip rebuild on unrelated widget reruns."""
+    _ = theme_ver
+    return conditions_figure(load_demo_conditions(field_id))
 
 
 @st.cache_data(show_spinner=False)
@@ -160,49 +168,71 @@ st.markdown(
 st.title(conditions.name)
 st.caption(f"{conditions.climate_label} · {conditions.country or 'Custom field'}")
 
-# --- 1. Your field ---
-section(
-    "Your field",
-    "Satellite basemap with your polygon, plus a Sentinel-2 monthly timelapse.",
-    step=1,
-)
-c_map, c_tl = st.columns([1, 1], gap="large")
-with c_map:
-    fmap = field_map(conditions.polygon)
-    st_folium(fmap, width=None, height=380, key=f"field-map-{field_id}")
-with c_tl:
-    mode = st.radio(
-        "Imagery product",
-        ["ndvi", "rgb"],
-        format_func=lambda x: (
-            "Plant greenness (NDVI)" if x == "ndvi" else "True color (RGB)"
-        ),
-        horizontal=True,
-        key=f"tl-mode-{field_id}",
+# --- 1. Your field (fragment: NDVI/RGB toggles must not re-run the whole page) ---
+def _imagery_block() -> None:
+    section(
+        "Your field",
+        "Satellite basemap with your polygon, plus a Sentinel-2 monthly timelapse.",
+        step=1,
     )
-    play = st.toggle("Autoplay GIF", value=True, key=f"tl-play-{field_id}")
-    tl = get_timelapse(field_id, index=mode)
-    if tl.get("path") and Path(tl["path"]).exists():
-        frames = _gif_png_frames(tl["path"])
-        if play:
-            st.image(tl["path"], use_container_width=True)
-            st.caption("Autoplay · monthly cloud-masked composites")
-        else:
-            idx = st.slider(
-                "Month frame",
-                0,
-                max(0, len(frames) - 1),
-                min(7, max(0, len(frames) - 1)),
-                key=f"tl-slider-{field_id}-{mode}",
-            )
-            st.image(frames[idx], use_container_width=True)
-            st.caption("Scrub months manually — labels are burned into each frame")
-        source_caption(
-            "Sentinel-2 NDVI" if mode == "ndvi" else "Sentinel-2 RGB",
-            ndvi_through,
+    c_map, c_tl = st.columns([1, 1], gap="large")
+    with c_map:
+        fmap = field_map(conditions.polygon)
+        # Display-only map — skip returning draw state (much faster on reruns).
+        st_folium(
+            fmap,
+            height=360,
+            use_container_width=True,
+            key=f"field-map-{field_id}",
+            returned_objects=[],
         )
-    else:
-        st.info(tl.get("message", "Timelapse not available yet."))
+    with c_tl:
+        mode = st.radio(
+            "Imagery product",
+            ["ndvi", "rgb"],
+            format_func=lambda x: (
+                "Plant greenness (NDVI)" if x == "ndvi" else "True color (RGB)"
+            ),
+            horizontal=True,
+            key=f"tl-mode-{field_id}",
+        )
+        play = st.toggle("Autoplay GIF", value=True, key=f"tl-play-{field_id}")
+        tl = get_timelapse(field_id, index=mode)
+        if tl.get("path") and Path(tl["path"]).exists():
+            if play:
+                # Autoplay uses the GIF as-is — do not decode every frame.
+                st.image(tl["path"], use_container_width=True)
+                st.caption("Autoplay · monthly cloud-masked composites")
+            else:
+                frames = _gif_png_frames(tl["path"])
+                idx = st.slider(
+                    "Month frame",
+                    0,
+                    max(0, len(frames) - 1),
+                    min(7, max(0, len(frames) - 1)),
+                    key=f"tl-slider-{field_id}-{mode}",
+                )
+                st.image(frames[idx], use_container_width=True)
+                st.caption(
+                    "Scrub months manually — labels are burned into each frame"
+                )
+            source_caption(
+                "Sentinel-2 NDVI" if mode == "ndvi" else "Sentinel-2 RGB",
+                ndvi_through,
+            )
+        else:
+            st.info(tl.get("message", "Timelapse not available yet."))
+
+
+if hasattr(st, "fragment"):
+
+    @st.fragment  # type: ignore[attr-defined]
+    def imagery_fragment() -> None:
+        _imagery_block()
+
+    imagery_fragment()
+else:
+    _imagery_block()
 
 # --- 2. What the satellites see ---
 section(
@@ -210,48 +240,82 @@ section(
     "Key facts first, then the seasonal pattern across a typical year.",
     step=2,
 )
+if feat.frost_free_days:
+    frost_value = f"{feat.frost_free_days:.0f} days"
+elif conditions.climate_label and "subtropical" in conditions.climate_label.lower():
+    frost_value = "Rarely frosts"
+else:
+    frost_value = "Not estimated yet"
+
 chips = [
     {
         "label": "Bare soil window",
         "value": feat.bare_months_label.split("(")[0].strip()
         if feat.bare_months_label
-        else "—",
+        else "Not estimated yet",
         "meaning": FACT_HELP["bare"],
-        "help": f"source: Sentinel-2 NDVI · data through {ndvi_through or '—'}",
+        "help": (
+            f"source: Sentinel-2 plant greenness · data through "
+            f"{ndvi_through or 'latest available'}"
+        ),
     },
     {
         "label": "Frost-free days",
-        "value": f"{feat.frost_free_days:.0f} days"
-        if feat.frost_free_days
-        else "—",
+        "value": frost_value,
         "meaning": FACT_HELP["frost"],
-        "help": f"source: NASA POWER T2M_MIN · data through {power_through or '—'}",
+        "help": (
+            f"source: NASA POWER temperature · data through "
+            f"{power_through or 'latest available'}"
+        ),
     },
     {
         "label": "Rain (mm/yr)",
         "value": f"≈ {feat.rain_annual_mm:.0f} mm"
         if feat.rain_annual_mm
-        else "—",
+        else "Not estimated yet",
         "meaning": FACT_HELP["rain"],
-        "help": f"source: rain_best · data through {rain_through or '—'}",
+        "help": (
+            f"source: Best available rainfall · data through "
+            f"{rain_through or 'latest available'}"
+        ),
     },
     {
         "label": "Regional water storage",
-        "value": grace_label,
+        "value": grace_label if grace_label and grace_label != "—" else "Not estimated yet",
         "meaning": FACT_HELP["grace"],
-        "help": f"source: GRACE/FO · data through {grace_through or '—'}",
+        "help": (
+            f"source: GRACE water storage · data through "
+            f"{grace_through or 'latest available'}"
+        ),
     },
 ]
 fact_chips(chips)
 
 with st.expander("How to read this chart", expanded=False):
     st.markdown(chart_how_to_read())
-st.plotly_chart(conditions_figure(conditions), use_container_width=True)
+
+st.markdown(
+    f'<p class="fs-chart-takeaway">{conditions_takeaway(conditions)}</p>',
+    unsafe_allow_html=True,
+)
+_chart = (
+    conditions_figure(conditions)
+    if field_id == "custom"
+    else _cached_demo_conditions_figure(field_id)
+)
+st.plotly_chart(
+    _chart,
+    use_container_width=True,
+    config={"displayModeBar": False},
+)
 st.caption(
     "Plant greenness (line) · Rain mm (bars) · Water balance (dashed). "
     "Tan shade ≈ usually bare · light red ≈ growing-season stress."
 )
-source_caption("Sentinel-2 / SMAP / rain_best / water balance", rain_through)
+source_caption(
+    "Sentinel-2 / SMAP / Best available rainfall / water balance",
+    rain_through,
+)
 
 anoms = payload.get("anomalies") or {}
 with st.expander("Stress & anomalies (SI model)"):
@@ -395,84 +459,110 @@ if not new_rot:
     new_rot = list(default_cash)
 st.session_state["current_rotation"] = new_rot
 
+_soil_labels = {
+    "sand": "Sandy",
+    "loam": "Loam (mixed)",
+    "clay": "Clay",
+    "silt": "Silt",
+    "unknown": "Not sure",
+}
 st.session_state["soil_type"] = st.selectbox(
     "Soil type",
     ["sand", "loam", "clay", "silt", "unknown"],
     index=["sand", "loam", "clay", "silt", "unknown"].index(
         st.session_state["soil_type"]
     ),
+    format_func=lambda x, _l=_soil_labels: _l[x],
+    help="Rough texture is enough. Used lightly for climate/soil context — "
+    "not a lab soil test.",
 )
 
-st.markdown("**What you have** *(optional — defaults are “don’t know”)*")
+st.markdown("**What you have on the farm**")
+st.caption(
+    "Optional. Skip any field you are unsure about — we will not block options "
+    "for blanks. Answers here filter or gently adjust recommendations; they do "
+    "not change your priority sliders below."
+)
 c1, c2, c3 = st.columns(3)
 with c1:
     water_label = {
-        "rainfed": "Rain-fed",
-        "limited": "Some irrigation",
+        "rainfed": "Rain-fed only (no irrigation)",
+        "limited": "Some irrigation available",
         "irrigated": "Fully irrigated",
     }
     st.session_state["water_access"] = st.radio(
-        "Water",
+        "How do you water this field?",
         ["rainfed", "limited", "irrigated"],
         index=["rainfed", "limited", "irrigated"].index(
             st.session_state["water_access"]
         ),
         format_func=lambda x: water_label[x],
-        help="Feeds the water score. Rain-fed = no irrigation lift.",
+        help="Used in the water score. Rain-fed relies only on rainfall from satellites.",
     )
     if st.session_state["water_access"] in ("limited", "irrigated"):
         st.session_state["irrigations_per_season"] = int(
             st.number_input(
-                "Irrigations per season",
+                "Typical irrigations per growing season",
                 min_value=0,
                 max_value=20,
                 value=int(st.session_state.get("irrigations_per_season", 0)),
-                help="Each event adds a small documented water-score lift (capped).",
+                help="Rough count is fine. Each watering adds a small, capped lift "
+                "to the water score.",
                 key=f"irr-n-{field_id}",
             )
         )
     else:
         st.session_state["irrigations_per_season"] = 0
+    _n_labels = {
+        "unknown": "Not sure / prefer not to say",
+        "low": "Low — little synthetic N",
+        "medium": "Medium — typical for the area",
+        "high": "High — heavy N fertilizer",
+    }
     st.session_state["nitrogen"] = st.selectbox(
-        "Nitrogen fertilizer use",
+        "Nitrogen fertilizer on this field",
         ["unknown", "low", "medium", "high"],
         index=["unknown", "low", "medium", "high"].index(
             st.session_state.get("nitrogen", "unknown")
         ),
-        help="When a strategy includes a legume, soil health gets a small bonus "
-        "(larger if current N use is high).",
+        format_func=lambda x, _l=_n_labels: _l[x],
+        help="If a rotation includes a nitrogen-fixing crop (legume), we note that "
+        "it may cut N need for the next crop, and give a small soil-health bonus "
+        "(larger when your current N use is high).",
         key=f"n-{field_id}",
     )
     st.session_state["livestock"] = st.checkbox(
-        "I have livestock",
+        "I keep livestock that can eat forage",
         value=st.session_state["livestock"],
-        help="With livestock, cover crops and forage legumes become feed, "
-        "which counts as income.",
+        help="If yes, cover crops and forage legumes can count as feed income — "
+        "not only as soil cover.",
         key=f"live-{field_id}",
     )
 with c2:
-    st.caption("Machinery (uncheck = you don’t have it)")
+    st.markdown("**Equipment you can use**")
+    st.caption("Leave unchecked if you are not sure — we will not exclude options.")
     sg = st.checkbox(
-        "Small-grain harvest",
+        "Can harvest small grains (wheat, rye, …)",
         value=st.session_state.get("has_small_grain_harvest") is True,
         key=f"mach-sg-{field_id}",
     )
     hay = st.checkbox(
-        "Hay / forage equipment",
+        "Can make hay or manage forage",
         value=st.session_state.get("has_hay_forage_equipment") is True,
         key=f"mach-hay-{field_id}",
     )
     rowp = st.checkbox(
-        "Row-crop planter",
+        "Can plant row crops (maize, soy, …)",
         value=st.session_state.get("has_row_crop_planter") is True,
         key=f"mach-row-{field_id}",
     )
     # Tri-state: unchecked after never set stays None (don't know) via "I know my kit"
     know_kit = st.checkbox(
-        "I know my machinery limits",
+        "Use my answers above as hard limits",
         value=st.session_state.get("know_kit", False),
         key=f"know-kit-{field_id}",
-        help="When on, unchecked boxes mean you lack that equipment (hard constraint).",
+        help="Turn this on only when you are sure. Then unchecked boxes mean "
+        "you cannot run that crop type — those options are marked Not suitable.",
     )
     st.session_state["know_kit"] = know_kit
     if know_kit:
@@ -484,98 +574,154 @@ with c2:
         st.session_state["has_hay_forage_equipment"] = None
         st.session_state["has_row_crop_planter"] = None
 with c3:
+    _labor_labels = {
+        "low": "Tight — hard to take on extra field work",
+        "normal": "Typical — manage a normal season",
+        "high": "Flexible — can take on more management",
+    }
     st.session_state["labor"] = st.selectbox(
-        "Labor",
+        "People available for field work",
         ["low", "normal", "high"],
         index=["low", "normal", "high"].index(
             st.session_state.get("labor", "normal")
         ),
+        format_func=lambda x, _l=_labor_labels: _l[x],
+        help="Tight labor slightly lowers scores for rotations that add cover crops "
+        "(extra planting/termination work). It does not hide those options.",
         key=f"labor-{field_id}",
     )
+    _budget_labels = {
+        "low": "Tight — prefer not to buy new seed now",
+        "normal": "OK — can buy seed if the benefit is clear",
+    }
     st.session_state["budget_new_seed"] = st.selectbox(
-        "Budget for new seed",
+        "Money for new seed this year",
         ["low", "normal"],
         index=["low", "normal"].index(
             st.session_state.get("budget_new_seed", "normal")
         ),
+        format_func=lambda x, _l=_budget_labels: _l[x],
+        help="Tight budget slightly lowers scores when a strategy adds cover-crop "
+        "seed. It does not remove the option — you still see it with the reason.",
         key=f"budget-{field_id}",
-        help="Low budget applies a soft penalty when a strategy adds cover seed.",
     )
-    st.caption("Market access per crop in your rotation")
+    st.markdown("**Can you sell each crop?**")
+    st.caption(
+        "One answer per crop in your rotation. “Not sure” keeps income at the "
+        "default estimate."
+    )
     market: dict[str, str] = dict(st.session_state.get("market_access") or {})
     # Unique crop ids (multi-year cycles can repeat the same cash crop).
+    _mkt_labels = {
+        "unknown": "Not sure yet",
+        "buyer": "Yes — I already have a buyer",
+        "no_market": "No — hard to sell locally",
+    }
     for cid in dict.fromkeys(c for c in new_rot if c and c != "(none)"):
-        _mkt_labels = {
-            "unknown": "Unknown",
-            "buyer": "I have a buyer",
-            "no_market": "No local market",
-        }
+        try:
+            crop_name = crop_by_id(cid)["name"]
+        except KeyError:
+            crop_name = cid.replace("_", " ").title()
 
         def _fmt_mkt(x: str, _l: dict[str, str] = _mkt_labels) -> str:
             return _l.get(x, x)
 
         market[cid] = st.selectbox(
-            f"Market · {cid.replace('_', ' ')}",
+            f"Selling {crop_name}",
             ["unknown", "buyer", "no_market"],
             index=["unknown", "buyer", "no_market"].index(
                 market.get(cid, "unknown")
             ),
             format_func=_fmt_mkt,
             key=f"mkt-{field_id}-{cid}",
-            help="Buyer lifts income. No local market marks cash crops Not suitable "
-            "(covers/forage used on-farm still OK).",
+            help="Yes (buyer): raises the relative income score. "
+            "No (hard to sell): cash crops are marked Not suitable. "
+            "Cover/forage kept for on-farm use can still be suitable.",
         )
     st.session_state["market_access"] = market
 
-st.markdown("**What matters to you** *(ranking weights — not constraints)*")
-st.caption(
-    "Sliders weight the overall score (0 = ignore, 1 = normal, 2 = double). "
-    "Constraints above mark options unsuitable or apply soft penalties — "
-    "they do not change these weights."
-)
-w_meta = [
-    ("water", "Water"),
-    ("soil_health", "Soil health"),
-    ("erosion", "Erosion"),
-    ("pest_break", "Pest break"),
-    ("climate_fit", "Climate fit"),
-    ("income", "Income"),
-]
-w_cols = st.columns(3)
-weights: dict[str, float] = {}
-for i, (key, label) in enumerate(w_meta):
-    with w_cols[i % 3]:
-        help_txt = CRITERION_HELP.get(key, {}).get("detail", "")
-        if key == "income":
-            help_txt = (
-                "Relative income: typical price tier × yield potential, "
-                "adjusted for market access (buyer lift). Not a farm budget. "
-                + help_txt
-            )
-        weights[key] = st.slider(
-            label,
-            0.0,
-            2.0,
-            1.0,
-            0.1,
-            key=f"w-{field_id}-{key}",
-            help=help_txt,
-        )
-weights_bar(weights)
-
-# --- 4 + 5 Options / what-if (live re-score) ---
-section(
-    "Your options",
-    "Tiered cards: Best fit · Worth considering · Your rotation · Not suitable. "
-    "Updates when you change priorities, constraints, or climate sliders.",
-    step=4,
-)
-
-
+# --- 4 + 5 Priorities, climate what-if, then options (fragment for snappy sliders) ---
 def _options_block() -> None:
+    st.markdown("**What matters most to you**")
+    st.caption(
+        "These sliders set how we rank options (0 = ignore, 1 = equal weight, "
+        "2 = twice as important). Farm facts above only filter or gently adjust "
+        "scores — they never change these weights."
+    )
+    w_meta = [
+        ("water", "Water"),
+        ("soil_health", "Soil health"),
+        ("erosion", "Erosion"),
+        ("pest_break", "Pest break"),
+        ("climate_fit", "Climate fit"),
+        ("income", "Income"),
+    ]
+    w_cols = st.columns(3)
+    weights: dict[str, float] = {}
+    for i, (key, label) in enumerate(w_meta):
+        with w_cols[i % 3]:
+            help_txt = CRITERION_HELP.get(key, {}).get("detail", "")
+            if key == "income":
+                help_txt = (
+                    "Relative income: typical price tier × yield potential, "
+                    "adjusted for market access (buyer lift). Not a farm budget. "
+                    + help_txt
+                )
+            weights[key] = st.slider(
+                label,
+                0.0,
+                2.0,
+                1.0,
+                0.1,
+                key=f"w-{field_id}-{key}",
+                help=help_txt,
+            )
+    weights_bar(weights)
+
+    # Climate first so scenario is set before reading the scored options.
+    section(
+        "What if the climate shifts?",
+        "Set a scenario first — options below re-score from cached features only "
+        "(no Earth Engine re-extract).",
+        step=4,
+    )
+    c_rain, c_temp = st.columns(2)
+    with c_rain:
+        st.session_state["rain_mult"] = st.slider(
+            "Rainfall change (multiplier)",
+            0.7,
+            1.3,
+            float(st.session_state["rain_mult"]),
+            0.05,
+            key=f"rain-{field_id}",
+            help="1.0 = today’s rainfall. 0.8 ≈ 20% drier years; 1.2 ≈ 20% wetter.",
+        )
+    with c_temp:
+        st.session_state["temp_offset"] = st.slider(
+            "Temperature offset (°C)",
+            0.0,
+            3.0,
+            float(st.session_state["temp_offset"]),
+            0.5,
+            key=f"temp-{field_id}",
+            help="Extra warming on top of today’s climate (e.g. +2 °C warmer seasons).",
+        )
+
     climate_shifted = (
         abs(float(st.session_state["rain_mult"]) - 1.0) > 1e-6
         or float(st.session_state["temp_offset"]) > 1e-6
+    )
+    if climate_shifted:
+        st.caption(
+            f"Scenario applied below: rain ×{st.session_state['rain_mult']:.2f}, "
+            f"temp +{st.session_state['temp_offset']:.1f} °C"
+        )
+
+    section(
+        "Your options",
+        "Tiered cards: Best fit · Worth considering · Your rotation · Not suitable. "
+        "Updates when you change priorities, constraints, or climate sliders.",
+        step=5,
     )
     cons = FarmConstraints(
         has_small_grain_harvest=st.session_state.get("has_small_grain_harvest"),
@@ -609,36 +755,6 @@ def _options_block() -> None:
         recommendation_banner(recommendation_sentence(cards))
         render_strategy_cards(cards, show_climate_delta=climate_shifted)
 
-    section(
-        "What if the climate shifts?",
-        "Move the sliders — cards re-score from cached features only "
-        "(no Earth Engine re-extract).",
-        step=5,
-    )
-    st.session_state["rain_mult"] = st.slider(
-        "Rainfall change (multiplier)",
-        0.7,
-        1.3,
-        float(st.session_state["rain_mult"]),
-        0.05,
-        key=f"rain-{field_id}",
-        help="1.0 = today’s rainfall. 0.8 ≈ 20% drier years; 1.2 ≈ 20% wetter.",
-    )
-    st.session_state["temp_offset"] = st.slider(
-        "Temperature offset (°C)",
-        0.0,
-        3.0,
-        float(st.session_state["temp_offset"]),
-        0.5,
-        key=f"temp-{field_id}",
-        help="Extra warming on top of today’s climate (e.g. +2 °C warmer seasons).",
-    )
-    if climate_shifted:
-        st.caption(
-            f"Scenario applied above: rain ×{st.session_state['rain_mult']:.2f}, "
-            f"temp +{st.session_state['temp_offset']:.1f} °C"
-        )
-
 
 if hasattr(st, "fragment"):
 
@@ -656,6 +772,7 @@ section(
     "Where the numbers come from, and where human judgment still matters.",
     step=6,
 )
+
 val = get_validation(field_id)
 through = payload.get("data_through") or {}
 if through:

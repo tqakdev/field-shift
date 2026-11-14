@@ -8,6 +8,7 @@ from fieldshift.engine import thresholds as th
 from fieldshift.services import list_sources, using_mock_data
 from ui.charts import pipeline_figure
 from ui.components import hero, section
+from ui.glossary import GLOSSARY
 from ui.mock_banner import show_mock_banner
 from ui.source_caption import source_caption
 
@@ -161,18 +162,14 @@ st.markdown(
 )
 
 section("Glossary")
-glossary = {
-    "NDVI": "Normalized Difference Vegetation Index — green plant cover from satellites.",
-    "Evapotranspiration (ET)": "Water leaving land as evaporation + plant transpiration.",
-    "Soil-moisture anomaly": "How wet/dry soil is vs the usual value for that calendar month.",
-    "Water balance": "Precipitation minus potential ET; negative means a deficit.",
-    "Frost-free days": "Days between last spring frost and first autumn frost (Tmin ≤ 0 °C).",
-    "GDD": "Growing Degree Days — heat accumulation for crop development.",
-    "Cover crop": "A crop grown to protect soil, not primarily for harvest.",
-    "N fixation": "Legumes converting atmospheric nitrogen into plant-available forms.",
-}
-for term, definition in glossary.items():
-    st.markdown(f"**{term}** — {definition}")
+rows = "".join(
+    f'<div class="fs-glossary-row">'
+    f'<div class="fs-glossary-term">{term}</div>'
+    f'<p class="fs-glossary-def">{definition}</p>'
+    f"</div>"
+    for term, definition in GLOSSARY.items()
+)
+st.markdown(f'<div class="fs-glossary">{rows}</div>', unsafe_allow_html=True)
 
 section("Team & AI use")
 st.write(

@@ -78,13 +78,28 @@ section(
     "Analyze my own field",
     "Draw a polygon, or enter coordinates — we’ll outline a field and map it for you.",
 )
-step_cols = st.columns(3)
-with step_cols[0]:
-    st.markdown("**01 — Locate**  \nDraw on the map or enter lat/lon.")
-with step_cols[1]:
-    st.markdown("**02 — Describe**  \nRotation, soil, water, priorities.")
-with step_cols[2]:
-    st.markdown("**03 — Compare**  \nScored rotation options with evidence.")
+st.markdown(
+    """
+<div class="fs-home-steps">
+  <div class="fs-home-step">
+    <p class="fs-home-step-num">01 — Locate</p>
+    <p class="fs-home-step-title">Find the field</p>
+    <p class="fs-home-step-body">Draw on the map or enter lat/lon.</p>
+  </div>
+  <div class="fs-home-step">
+    <p class="fs-home-step-num">02 — Describe</p>
+    <p class="fs-home-step-title">Farm context</p>
+    <p class="fs-home-step-body">Rotation, soil, water, priorities.</p>
+  </div>
+  <div class="fs-home-step">
+    <p class="fs-home-step-num">03 — Compare</p>
+    <p class="fs-home-step-title">See options</p>
+    <p class="fs-home-step-body">Scored rotations with evidence.</p>
+  </div>
+</div>
+    """,
+    unsafe_allow_html=True,
+)
 
 locate = st.radio(
     "How do you want to locate the field?",

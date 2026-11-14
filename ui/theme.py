@@ -1,36 +1,89 @@
-"""Field Shift design system — NASA-inspired mission UI."""
+"""Field Shift design system — single source of truth for tokens + CSS."""
 
 from __future__ import annotations
 
 import streamlit as st
 
-# NASA brand-adjacent tokens (official blue / worm-era red, mission neutrals)
-NASA_BLUE = "#0B3D91"
-NASA_BLUE_MID = "#1A4FA0"
-NASA_RED = "#E03C31"
-INK = "#0B1220"
-MUTED = "#5B6577"
-PAPER = "#FFFFFF"
-PANEL = "#EEF2F7"
-HAIRLINE = "#D5DCE6"
-EARTH = "#1B7A4E"  # vegetation / soil health (data, not brand)
-SKY = "#2F6FED"  # rain / water series
-SOIL = "#8B6914"
-ALERT = NASA_RED
-WHEAT = "#C4A035"
-LEAF = EARTH  # alias used by charts/components
-WHEAT_BG = PANEL
+# ---------------------------------------------------------------------------
+# Colour tokens (docs/DESIGN.md)
+# ---------------------------------------------------------------------------
+BACKGROUND = "#FBF8F2"
+SURFACE = "#FFFFFF"
+SIDEBAR = "#F0EAD9"
+TEXT = "#2B2B2B"
+MUTED = "#5C5C5C"  # darkened from #6B6B6B for WCAG AA on BACKGROUND/SURFACE
+PRIMARY = "#3F7D3A"
+WARNING = "#B26A00"
+DANGER = "#B23A3A"
+INFO = "#3A7CA5"
+CARD_BORDER = "#E3DDCF"
+HAIRLINE = CARD_BORDER
+FOCUS = "#2F5E2C"
 
-SCORE_COLORS = {
-    "water": SKY,
-    "soil_health": EARTH,
-    "erosion": SOIL,
-    "pest_break": "#0B3D91",
-    "climate_fit": "#3D7EA6",
-    "income": "#6B5B3E",
+# Spacing scale (px)
+SPACE = (8, 16, 24, 32, 48)
+
+# Okabe–Ito colour-blind-safe palette (fixed roles)
+OKABE = {
+    "black": "#000000",
+    "orange": "#E69F00",
+    "sky": "#56B4E9",
+    "bluish_green": "#009E73",
+    "yellow": "#F0E442",
+    "blue": "#0072B2",
+    "vermillion": "#D55E00",
+    "purple": "#CC79A7",
 }
 
-_THEME_VERSION = "nasa-v8"
+# Chart / criterion colours — one fixed colour per variable app-wide
+CHART_COLORS = {
+    "greenness": OKABE["bluish_green"],
+    "rain": OKABE["sky"],
+    "water_balance": OKABE["blue"],
+    "bare": OKABE["orange"],
+    "stress": OKABE["vermillion"],
+}
+SCORE_COLORS = {
+    "water": OKABE["sky"],
+    "soil_health": OKABE["bluish_green"],
+    "erosion": OKABE["orange"],
+    "pest_break": OKABE["purple"],
+    "climate_fit": OKABE["blue"],
+    "income": OKABE["vermillion"],
+    "total": PRIMARY,
+}
+
+# Back-compat aliases used across the codebase
+PAPER = SURFACE
+PANEL = SIDEBAR
+INK = TEXT
+NASA_BLUE = PRIMARY
+NASA_BLUE_MID = FOCUS
+NASA_RED = DANGER
+EARTH = PRIMARY
+SKY = INFO
+SOIL = WARNING
+ALERT = DANGER
+WHEAT = WARNING
+LEAF = PRIMARY
+WHEAT_BG = SIDEBAR
+
+# Text/background pairs that must meet WCAG 2.2 AA (used by tests)
+CONTRAST_PAIRS: list[tuple[str, str, str, float]] = [
+    # (name, fg, bg, min_ratio)
+    ("text_on_background", TEXT, BACKGROUND, 4.5),
+    ("text_on_surface", TEXT, SURFACE, 4.5),
+    ("muted_on_background", MUTED, BACKGROUND, 4.5),
+    ("muted_on_surface", MUTED, SURFACE, 4.5),
+    ("primary_on_background", PRIMARY, BACKGROUND, 3.0),  # large / UI chrome
+    ("primary_on_surface", PRIMARY, SURFACE, 3.0),
+    ("warning_on_background", WARNING, BACKGROUND, 3.0),
+    ("danger_on_background", DANGER, BACKGROUND, 3.0),
+    ("info_on_background", INFO, BACKGROUND, 3.0),
+    ("text_on_sidebar", TEXT, SIDEBAR, 4.5),
+]
+
+_THEME_VERSION = "design-v2"
 
 
 def inject_theme() -> None:
@@ -39,13 +92,12 @@ def inject_theme() -> None:
     st.markdown(
         f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&display=swap');
 
-html, body, [class*="css"], .stApp, .stMarkdown, button, input, label {{
-  font-family: "IBM Plex Sans", "Helvetica Neue", Helvetica, Arial, sans-serif !important;
+html, body, [class*="css"], .stApp, .stMarkdown, button, input, label, textarea {{
+  font-family: "Source Sans 3", "Helvetica Neue", Helvetica, Arial, sans-serif !important;
 }}
 
-/* Hide Streamlit chrome noise */
 #MainMenu {{ visibility: hidden; }}
 header[data-testid="stHeader"] {{ background: transparent; }}
 footer {{ visibility: hidden; }}
@@ -54,116 +106,149 @@ div[data-testid="stDecoration"] {{ display: none; }}
   display: none !important;
 }}
 
-.block-container {{
-  max-width: 1080px;
-  padding-top: 1.1rem;
-  padding-bottom: 3.5rem;
+.stApp, [data-testid="stAppViewContainer"], [data-testid="stAppViewBlockContainer"] {{
+  background: {BACKGROUND} !important;
+}}
+.block-container,
+[data-testid="stMainBlockContainer"] {{
+  max-width: 1100px !important;
+  padding-top: 24px;
+  padding-bottom: 48px;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }}
 
-/* Sidebar — mission strip */
+/* Strip Streamlit page / fragment chrome — borders only on real cards */
+div[data-testid="stVerticalBlockBorderWrapper"],
+div[data-testid="stMainBlockContainer"],
+section.main .block-container {{
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}}
+div[data-testid="stVerticalBlockBorderWrapper"] {{
+  background: transparent !important;
+  overflow: visible !important;
+  height: auto !important;
+  border-radius: 0 !important;
+}}
+div[data-testid="stVerticalBlockBorderWrapper"] > div {{
+  height: auto !important;
+}}
+/* Fragments sometimes draw a panel; keep them borderless on Field */
+[data-testid="stVerticalBlockBorderWrapper"]:not(:has(.fs-strat)):not(:has(.fs-chip)) {{
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}}
+
+/* Sidebar */
 section[data-testid="stSidebar"],
 section[data-testid="stSidebar"] > div,
 [data-testid="stSidebarContent"] {{
-  background-color: {NASA_BLUE} !important;
+  background-color: {SIDEBAR} !important;
   background-image: none !important;
-  border-right: none !important;
+  border-right: 1px solid {CARD_BORDER} !important;
 }}
 section[data-testid="stSidebar"] p,
 section[data-testid="stSidebar"] span,
 section[data-testid="stSidebar"] label,
 section[data-testid="stSidebar"] a {{
-  color: #F4F7FB !important;
+  color: {TEXT} !important;
 }}
 section[data-testid="stSidebar"] [data-testid="stSidebarNavLink"] {{
-  border-radius: 4px;
-  margin: 0.15rem 0.4rem;
-  padding: 0.5rem 0.7rem !important;
+  border-radius: 8px;
+  margin: 4px 8px;
+  padding: 12px 16px !important;
+  min-height: 44px;
 }}
 section[data-testid="stSidebar"] [data-testid="stSidebarNavLink"][aria-current="page"],
 section[data-testid="stSidebar"] [data-testid="stSidebarNavLink"]:hover {{
-  background: rgba(255,255,255,0.14) !important;
+  background: {SURFACE} !important;
+  box-shadow: inset 0 0 0 1px {CARD_BORDER};
 }}
 
+/* Typography scale */
 h1, .fs-title {{
-  font-size: 2.35rem !important;
+  font-size: 32px !important;
   font-weight: 700 !important;
-  color: {INK} !important;
-  letter-spacing: -0.03em;
-  line-height: 1.12 !important;
-  margin-bottom: 0.35rem !important;
+  color: {TEXT} !important;
+  letter-spacing: -0.02em;
+  line-height: 1.2 !important;
+  margin-bottom: 8px !important;
+  text-wrap: balance;
 }}
 h2, .fs-section-title {{
-  font-size: 1.35rem !important;
+  font-size: 22px !important;
   font-weight: 600 !important;
-  color: {INK} !important;
+  color: {TEXT} !important;
   letter-spacing: -0.01em;
+  line-height: 1.2 !important;
+  text-wrap: balance;
 }}
 h3 {{
-  font-size: 1.05rem !important;
+  font-size: 18px !important;
   font-weight: 600 !important;
-  color: {INK} !important;
+  color: {TEXT} !important;
+  line-height: 1.2 !important;
 }}
 p, .stMarkdown p {{
-  font-size: 1.02rem;
+  font-size: 16px;
   line-height: 1.5;
-  color: {INK};
+  color: {TEXT};
 }}
 [data-testid="stCaptionContainer"], .fs-caption {{
-  font-size: 0.82rem !important;
+  font-size: 13px !important;
+  line-height: 1.45 !important;
   color: {MUTED} !important;
-  font-family: "IBM Plex Sans", sans-serif !important;
+}}
+.fs-prose {{
+  max-width: 640px;
 }}
 
-/* Hero — NASA meatball bar + mission copy */
+/* Hero — no side stripe; soft surface card */
 .fs-hero {{
-  position: relative;
-  background: linear-gradient(180deg, #F7F9FC 0%, {PAPER} 100%);
-  border: 1px solid {HAIRLINE};
-  border-radius: 4px;
-  padding: 1.65rem 1.75rem 1.4rem 1.75rem;
-  margin-bottom: 1.75rem;
-  overflow: hidden;
-}}
-.fs-hero::before {{
-  content: "";
-  position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 5px;
-  background: linear-gradient(180deg, {NASA_BLUE} 0%, {NASA_RED} 100%);
+  background: {SURFACE};
+  border: 1px solid {CARD_BORDER};
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 48px;
 }}
 .fs-eyebrow {{
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 0.72rem;
-  font-weight: 500;
-  letter-spacing: 0.14em;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: {NASA_BLUE};
-  margin: 0 0 0.55rem 0;
+  color: {PRIMARY};
+  margin: 0 0 8px 0;
 }}
 .fs-hero-promise {{
-  font-size: 1.12rem;
-  margin: 0.55rem 0 0.4rem 0;
-  max-width: 40rem;
-  color: {INK};
+  font-size: 16px;
+  margin: 8px 0;
+  max-width: 640px;
+  color: {TEXT};
   font-weight: 500;
+  line-height: 1.5;
 }}
 .fs-hero-sub {{
   color: {MUTED};
-  font-size: 0.92rem;
+  font-size: 13px;
   margin: 0;
+  max-width: 640px;
+  line-height: 1.45;
 }}
 .fs-mode-pill {{
   display: inline-block;
-  margin-top: 0.9rem;
-  padding: 0.28rem 0.75rem;
-  border-radius: 2px;
-  background: {NASA_BLUE};
-  color: white !important;
-  font-size: 0.72rem;
+  margin-top: 16px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: {PRIMARY};
+  color: {SURFACE} !important;
+  font-size: 13px;
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  font-family: "IBM Plex Mono", monospace;
+  min-height: 44px;
+  line-height: 28px;
 }}
 .fs-mode-pill.demo {{
   background: {MUTED};
@@ -172,410 +257,548 @@ p, .stMarkdown p {{
 .fs-section {{
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  margin: 2rem 0 0.45rem 0;
-  padding-bottom: 0.45rem;
-  border-bottom: 1px solid {HAIRLINE};
+  gap: 8px;
+  margin: 48px 0 8px 0;
+  padding-bottom: 0;
+  border-bottom: none;
 }}
 .fs-section-sub {{
   color: {MUTED};
-  font-size: 0.92rem;
-  margin: 0 0 1rem 0;
+  font-size: 16px;
+  margin: 0 0 24px 0;
+  max-width: 640px;
+  line-height: 1.5;
 }}
 .fs-step {{
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 1.55rem;
-  height: 1.55rem;
-  margin-right: 0.25rem;
-  padding: 0 0.35rem;
-  border-radius: 2px;
-  background: {NASA_BLUE};
-  color: white !important;
-  font-size: 0.78rem;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  border-radius: 8px;
+  background: {PRIMARY};
+  color: {SURFACE} !important;
+  font-size: 13px;
   font-weight: 700;
-  font-family: "IBM Plex Mono", monospace;
 }}
 
-.fs-chip {{
-  background: {PANEL};
-  border: 1px solid {HAIRLINE};
-  border-top: 3px solid {NASA_BLUE};
-  border-radius: 2px;
-  padding: 0.85rem 0.95rem;
-  min-height: 8.5rem;
-  height: 100%;
+/* Home steps */
+.fs-home-steps {{
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin: 8px 0 32px 0;
 }}
-.fs-chip-label {{
-  font-size: 0.72rem;
-  color: {MUTED};
-  margin: 0 0 0.35rem 0;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-family: "IBM Plex Mono", monospace;
-  font-weight: 500;
+.fs-home-step {{
+  background: {SURFACE};
+  border: 1px solid {CARD_BORDER};
+  border-radius: 8px;
+  padding: 16px;
 }}
-.fs-chip-value {{
-  font-size: 1.15rem;
+.fs-home-step-num {{
+  font-size: 13px;
   font-weight: 600;
-  color: {INK};
-  margin: 0 0 0.35rem 0;
-  line-height: 1.25;
-  font-family: "IBM Plex Mono", monospace;
+  color: {PRIMARY};
+  margin: 0 0 8px 0;
 }}
-.fs-chip-meaning {{
-  font-size: 0.78rem;
+.fs-home-step-title {{
+  font-size: 16px;
+  font-weight: 600;
+  color: {TEXT};
+  margin: 0 0 4px 0;
+}}
+.fs-home-step-body {{
+  font-size: 13px;
   color: {MUTED};
   margin: 0;
-  line-height: 1.35;
+  line-height: 1.45;
+}}
+@media (max-width: 700px) {{
+  .fs-home-steps {{ grid-template-columns: 1fr; }}
 }}
 
-/* Compact strategy cards */
-.fs-strat {{
-  margin: 0 0 0.15rem 0;
+/* Fact chips */
+.fs-chip-grid {{
+  display: grid;
+  grid-template-columns: repeat(var(--fs-chip-cols, 4), minmax(0, 1fr));
+  gap: 16px;
+  margin: 8px 0 32px 0;
+  align-items: stretch;
 }}
-.fs-strat-role {{
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 0.68rem;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+.fs-chip {{
+  display: flex;
+  flex-direction: column;
+  background: {SURFACE};
+  border: 1px solid {CARD_BORDER};
+  border-radius: 8px;
+  padding: 16px;
+  min-height: 0;
+  height: 100%;
+  box-sizing: border-box;
+  overflow: visible;
+}}
+.fs-chip-label {{
+  font-size: 13px;
   color: {MUTED};
-  margin: 0 0 0.25rem 0;
-}}
-.fs-strat-title {{
-  font-size: 1.05rem;
+  margin: 0 0 8px 0;
   font-weight: 600;
-  color: {INK};
-  margin: 0 0 0.15rem 0;
+}}
+.fs-chip-value {{
+  font-size: 26px;
+  font-weight: 700;
+  color: {TEXT};
+  margin: 0 0 8px 0;
+  line-height: 1.2;
+  overflow: visible;
+  font-variant-numeric: tabular-nums;
+}}
+.fs-chip-meaning {{
+  font-size: 13px;
+  color: {MUTED};
+  margin: 0;
+  line-height: 1.45;
+  flex: 1 1 auto;
+}}
+.fs-chip-source {{
+  margin: 16px 0 0 0;
+  padding-top: 8px;
+  border-top: 1px solid {CARD_BORDER};
+  font-size: 13px;
+  line-height: 1.35;
+  color: {MUTED};
+}}
+@media (max-width: 700px) {{
+  .fs-chip-grid {{ grid-template-columns: 1fr; }}
+}}
+
+/* Strategy cards */
+.fs-strat {{
+  margin: 0;
+  padding-top: 0;
+  overflow: visible;
+}}
+.fs-strat::before {{
+  content: "";
+  display: block;
+  width: 32px;
+  height: 3px;
+  border-radius: 2px;
+  background: {MUTED};
+  margin: 0 0 12px 0;
+}}
+.fs-tier-best::before {{ background: {PRIMARY}; }}
+.fs-tier-worth::before {{ background: {WARNING}; }}
+.fs-tier-base::before {{ background: {INFO}; }}
+.fs-tier-bad::before {{ background: {DANGER}; }}
+.fs-strat-role {{
+  font-size: 13px;
+  font-weight: 600;
+  color: {MUTED};
+  margin: 0 0 8px 0;
+  min-height: 20px;
+}}
+.fs-tier-best .fs-strat-role {{ color: {PRIMARY}; }}
+.fs-tier-worth .fs-strat-role {{ color: {WARNING}; }}
+.fs-tier-base .fs-strat-role {{ color: {INFO}; }}
+.fs-tier-bad .fs-strat-role {{ color: {DANGER}; }}
+.fs-strat-title {{
+  font-size: 18px;
+  font-weight: 700;
+  color: {TEXT};
+  margin: 0;
   line-height: 1.25;
+  min-height: 2.5em;
+  overflow: visible;
 }}
 .fs-tier-reason {{
-  font-size: 0.82rem;
+  font-size: 13px;
   color: {MUTED};
-  margin: 0.2rem 0 0.35rem 0;
+  margin: 8px 0 0;
+  line-height: 1.45;
+  min-height: 2.9em;
+}}
+.fs-strat-flags {{
+  min-height: 24px;
+  margin: 8px 0;
+  font-size: 13px;
+  color: {MUTED};
   line-height: 1.35;
 }}
-.fs-tier-best {{
-  border-left: 3px solid {EARTH};
-  padding-left: 0.55rem;
-}}
-.fs-tier-worth {{
-  border-left: 3px solid {WHEAT};
-  padding-left: 0.55rem;
-}}
-.fs-tier-base {{
-  border-left: 3px solid {MUTED};
-  padding-left: 0.55rem;
-}}
-.fs-tier-bad {{
-  border-left: 3px solid {NASA_RED};
-  padding-left: 0.55rem;
-}}
+.fs-strat-flags .bad {{ color: {DANGER}; }}
 .fs-strat-summary {{
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: 16px;
   flex-wrap: wrap;
-  margin: 0.35rem 0 0.55rem 0;
-  padding: 0.55rem 0.65rem;
-  background: {PANEL};
-  border: 1px solid {HAIRLINE};
-  border-radius: 2px;
+  margin: 16px 0;
+  padding: 16px;
+  box-sizing: border-box;
+  background: {BACKGROUND};
+  border: 1px solid {CARD_BORDER};
+  border-radius: 8px;
+  overflow: visible;
 }}
 .fs-strat-score {{
   display: flex;
   align-items: baseline;
-  gap: 0.45rem;
+  gap: 8px;
+  min-width: 0;
 }}
 .fs-strat-score-num {{
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 1.55rem;
+  font-size: 26px;
   font-weight: 700;
-  color: {INK};
-  line-height: 1;
+  color: {TEXT};
+  line-height: 1.2;
+  overflow: visible;
+  font-variant-numeric: tabular-nums;
 }}
 .fs-strat-score-label {{
-  font-size: 0.72rem;
+  font-size: 13px;
   color: {MUTED};
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  font-weight: 500;
 }}
 .fs-strat-meta {{
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 8px;
   flex-wrap: wrap;
 }}
 .fs-card-delta {{
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 0.75rem;
+  font-size: 13px;
   font-weight: 600;
-  padding: 0.12rem 0.4rem;
-  border-radius: 2px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  white-space: nowrap;
 }}
-.fs-card-delta.up {{ color: {EARTH}; background: #EDF7F1; }}
-.fs-card-delta.down {{ color: {NASA_RED}; background: #FDF0EF; }}
-.fs-card-delta.flat {{ color: {MUTED}; background: {PANEL}; }}
+.fs-card-delta.up {{ color: {PRIMARY}; background: #E8F2E7; }}
+.fs-card-delta.down {{ color: {DANGER}; background: #F8EAEA; }}
+.fs-card-delta.flat {{ color: {MUTED}; background: {SIDEBAR}; }}
 .fs-card-note {{
-  font-size: 0.75rem;
+  font-size: 13px;
   color: {MUTED};
-  margin: 0 0 0.4rem 0;
+  margin: 0 0 8px 0;
+}}
+.fs-card-spacer {{
+  flex: 1 1 auto;
+  min-height: 8px;
+  height: 8px;
 }}
 
-/* 2-col score grid inside each card */
+/* Equal-height strategy card rows only */
+div[data-testid="stHorizontalBlock"] {{
+  align-items: flex-start !important;
+  gap: 16px !important;
+}}
+div[data-testid="stHorizontalBlock"]:has(.fs-strat) {{
+  align-items: stretch !important;
+}}
+div[data-testid="stHorizontalBlock"]:has(.fs-strat) > div[data-testid="stColumn"] {{
+  display: flex !important;
+  flex-direction: column;
+}}
+div[data-testid="stHorizontalBlock"]:has(.fs-strat) > div[data-testid="stColumn"] > div {{
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}}
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.fs-strat) {{
+  height: 100%;
+  display: flex !important;
+  flex-direction: column;
+  border: 1px solid {CARD_BORDER} !important;
+  border-radius: 8px !important;
+  background: {SURFACE} !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+  padding: 4px;
+}}
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.fs-strat) > div {{
+  height: 100%;
+  display: flex !important;
+  flex-direction: column;
+}}
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.fs-strat)
+[data-testid="element-container"] {{
+  flex: 0 0 auto !important;
+  height: auto !important;
+}}
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.fs-strat)
+[data-testid="element-container"]:has(.fs-card-spacer) {{
+  flex: 1 1 auto !important;
+}}
+
 .fs-sc-grid {{
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.45rem 0.65rem;
-  margin: 0.15rem 0 0.45rem 0;
+  gap: 16px;
+  margin: 0;
 }}
 .fs-sc {{
   min-width: 0;
   cursor: help;
+  min-height: 56px;
+  overflow: visible;
 }}
 .fs-sc-top {{
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 0.35rem;
-  margin-bottom: 0.12rem;
+  gap: 8px;
+  margin-bottom: 4px;
 }}
 .fs-sc-name {{
-  font-size: 0.72rem;
+  font-size: 13px;
   font-weight: 600;
-  color: {INK};
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  color: {TEXT};
 }}
 .fs-sc-val {{
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 0.72rem;
+  font-size: 13px;
   font-weight: 600;
-  color: {INK};
+  color: {MUTED};
   flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
 }}
 .fs-sc-track {{
-  height: 5px;
-  background: {PANEL};
-  border: 1px solid {HAIRLINE};
-  border-radius: 1px;
+  height: 8px;
+  background: {SIDEBAR};
+  border: 1px solid {CARD_BORDER};
+  border-radius: 4px;
   overflow: hidden;
 }}
 .fs-sc-fill {{
   height: 100%;
-  border-radius: 1px;
+  border-radius: 3px;
   min-width: 2px;
 }}
 .fs-sc-band {{
   display: block;
-  margin-top: 0.12rem;
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 0.62rem;
+  margin-top: 4px;
+  font-size: 13px;
   font-weight: 600;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
   color: {MUTED};
+  min-height: 18px;
 }}
-.fs-band-strong {{ color: {EARTH}; }}
-.fs-band-good {{ color: {NASA_BLUE}; }}
-.fs-band-fair {{ color: {SOIL}; }}
-.fs-band-needs-attention {{ color: {NASA_RED}; }}
-
-@media (max-width: 640px) {{
+.fs-band-strong {{ color: {PRIMARY}; }}
+.fs-band-good {{ color: {INFO}; }}
+.fs-band-fair {{ color: {WARNING}; }}
+.fs-band-needs-attention {{ color: {DANGER}; }}
+@media (max-width: 700px) {{
   .fs-sc-grid {{ grid-template-columns: 1fr; }}
 }}
 
 .fs-banner {{
-  background: {PANEL};
-  border-left: 4px solid {NASA_BLUE};
-  border-radius: 2px;
-  padding: 1rem 1.15rem;
-  margin: 0.5rem 0 1.15rem 0;
-  font-size: 1.02rem;
-  color: {INK};
+  background: {SURFACE};
+  border: 1px solid {CARD_BORDER};
+  border-radius: 8px;
+  padding: 16px 24px;
+  margin: 8px 0 24px 0;
+  font-size: 16px;
+  color: {TEXT};
+  box-shadow: inset 0 3px 0 0 {PRIMARY};
+  max-width: 100%;
 }}
-.fs-banner strong {{ color: {NASA_BLUE}; }}
-
-.fs-card {{
-  border: 1px solid {HAIRLINE};
-  border-radius: 2px;
-  padding: 1rem 1.05rem 0.85rem;
-  background: {PAPER};
-  height: 100%;
-  box-shadow: 0 1px 0 rgba(11, 61, 145, 0.04);
-}}
-.fs-card.baseline {{
-  border: 1px solid {NASA_BLUE};
-  box-shadow: inset 0 0 0 1px {NASA_BLUE};
-  background: #F5F8FD;
-}}
-.fs-card.demo-pick {{
-  transition: box-shadow 0.2s ease;
-}}
-.fs-card.demo-pick img {{
-  border-radius: 2px;
-  border: 1px solid {HAIRLINE};
-}}
+.fs-banner strong {{ color: {PRIMARY}; }}
 
 .fs-pills {{
   display: flex;
   flex-wrap: wrap;
-  gap: 0.3rem;
-  margin: 0.45rem 0 0.55rem 0;
+  gap: 8px;
+  margin: 12px 0;
   align-items: center;
+  min-height: 40px;
 }}
 .fs-pill {{
   display: inline-block;
-  background: {PANEL};
-  border: 1px solid {HAIRLINE};
-  border-radius: 2px;
-  padding: 0.18rem 0.5rem;
-  font-size: 0.75rem;
-  color: {INK};
-  font-family: "IBM Plex Mono", monospace;
+  background: {SIDEBAR};
+  border: 1px solid {CARD_BORDER};
+  border-radius: 8px;
+  padding: 4px 12px;
+  font-size: 13px;
+  color: {TEXT};
+  line-height: 1.4;
 }}
 .fs-pill-arrow {{
   color: {MUTED};
-  font-size: 0.75rem;
-  padding: 0 0.1rem;
+  font-size: 13px;
 }}
 
 .fs-badge {{
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.18rem 0.5rem;
-  border-radius: 2px;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 8px;
   border: 1px solid;
-  font-size: 0.7rem;
+  font-size: 13px;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-family: "IBM Plex Mono", monospace;
 }}
-.fs-badge.high {{ color: {EARTH}; border-color: {EARTH}; background: #EDF7F1; }}
-.fs-badge.medium {{ color: {NASA_BLUE}; border-color: {NASA_BLUE}; background: #EEF3FB; }}
-.fs-badge.low {{ color: {NASA_RED}; border-color: {NASA_RED}; background: #FDF0EF; }}
+.fs-badge.high {{ color: {PRIMARY}; border-color: {PRIMARY}; background: #E8F2E7; }}
+.fs-badge.medium {{ color: {INFO}; border-color: {INFO}; background: #E8F1F6; }}
+.fs-badge.low {{ color: {DANGER}; border-color: {DANGER}; background: #F8EAEA; }}
+
+/* Sliders — prevent value label clipping */
+div[data-testid="stSlider"] {{
+  padding-left: 8px;
+  padding-right: 8px;
+  overflow: visible !important;
+}}
+div[data-testid="stSlider"] [data-baseweb="slider"] {{
+  overflow: visible !important;
+}}
+div[data-testid="stSlider"] label {{
+  font-size: 16px !important;
+}}
 
 div[data-testid="stMetricValue"] {{
-  font-size: 1.45rem !important;
+  font-size: 26px !important;
   font-weight: 700 !important;
-  font-family: "IBM Plex Mono", monospace !important;
-  color: {INK} !important;
+  color: {TEXT} !important;
+  line-height: 1.2 !important;
+  overflow: visible !important;
 }}
 div[data-testid="stMetricLabel"] {{
-  font-size: 0.78rem !important;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-size: 13px !important;
   color: {MUTED} !important;
 }}
 
-/* Primary buttons — white label on NASA blue (high contrast) */
-.stButton > button[kind="primary"],
-.stButton > button[data-testid="baseButton-primary"],
-button[kind="primary"],
-button[data-testid="baseButton-primary"] {{
-  background-color: {NASA_BLUE} !important;
-  background-image: none !important;
-  border: 1px solid {NASA_BLUE} !important;
-  border-radius: 2px !important;
+.stButton > button {{
+  border-radius: 8px !important;
+  min-height: 44px !important;
   font-weight: 600 !important;
-  letter-spacing: 0.02em;
-  color: #FFFFFF !important;
+  transition: background-color 0.15s ease, border-color 0.15s ease !important;
+}}
+.stButton > button[kind="primary"],
+button[kind="primary"] {{
+  background-color: {PRIMARY} !important;
+  border: 1px solid {PRIMARY} !important;
+  color: {SURFACE} !important;
 }}
 .stButton > button[kind="primary"] *,
-.stButton > button[data-testid="baseButton-primary"] *,
-button[kind="primary"] *,
-button[data-testid="baseButton-primary"] * {{
-  color: #FFFFFF !important;
-  fill: #FFFFFF !important;
+button[kind="primary"] * {{
+  color: {SURFACE} !important;
 }}
 .stButton > button[kind="primary"]:hover,
-.stButton > button[data-testid="baseButton-primary"]:hover,
 button[kind="primary"]:hover {{
-  background-color: {NASA_BLUE_MID} !important;
-  color: #FFFFFF !important;
-  border-color: {NASA_BLUE_MID} !important;
+  background-color: {FOCUS} !important;
+  border-color: {FOCUS} !important;
+}}
+.stButton > button:focus-visible,
+input:focus-visible,
+[data-baseweb="select"] *:focus-visible {{
+  outline: 3px solid {FOCUS} !important;
+  outline-offset: 2px !important;
 }}
 
-/* Equal-height demo field cards */
-.fs-demo-grid {{
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-  margin: 0.5rem 0 1.25rem 0;
+[data-testid="stExpander"] details {{
+  border: 1px solid {CARD_BORDER} !important;
+  border-radius: 8px !important;
+  background: {SURFACE} !important;
 }}
-.fs-demo-card {{
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  min-height: 100%;
-  border: 1px solid {HAIRLINE};
-  border-radius: 2px;
-  background: {PAPER};
+[data-testid="stExpander"] summary {{
+  padding: 12px 16px !important;
+  font-size: 16px !important;
+  min-height: 44px;
+}}
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.fs-strat)
+[data-testid="stExpander"] details {{
+  background: transparent !important;
+  border: none !important;
+  border-top: 1px solid {CARD_BORDER} !important;
+  border-radius: 0 !important;
+}}
+
+div[data-testid="stDataFrame"] {{
+  border: 1px solid {CARD_BORDER};
+  border-radius: 8px;
   overflow: hidden;
 }}
-.fs-demo-card img {{
-  width: 100%;
-  aspect-ratio: 5 / 4;
-  object-fit: cover;
-  display: block;
-  border-bottom: 1px solid {HAIRLINE};
+
+[data-testid="stImage"] img {{
+  border-radius: 8px;
+  border: 1px solid {CARD_BORDER};
 }}
-.fs-demo-card-body {{
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  padding: 0.85rem 0.9rem 0.95rem;
-  gap: 0.25rem;
+div[data-testid="stHorizontalBlock"] [data-testid="stImage"] img {{
+  max-height: 320px;
+  width: 100%;
+  object-fit: contain;
+  background: {SIDEBAR};
+}}
+.fs-demo-thumb-empty {{
+  aspect-ratio: 5 / 4;
+  background: {SIDEBAR};
+  border: 1px solid {CARD_BORDER};
+  border-radius: 8px;
+}}
+.fs-demo-copy {{
+  min-height: 120px;
+  margin: 8px 0;
 }}
 .fs-demo-card-title {{
   font-weight: 600;
-  font-size: 1.02rem;
-  color: {INK};
-  margin: 0;
+  font-size: 16px;
+  color: {TEXT};
+  margin: 0 0 4px 0;
   line-height: 1.3;
   min-height: 2.6em;
 }}
 .fs-demo-card-meta {{
   color: {MUTED};
-  font-size: 0.85rem;
-  margin: 0;
+  font-size: 13px;
+  margin: 0 0 8px 0;
   line-height: 1.35;
   min-height: 2.7em;
 }}
 .fs-demo-card-rot {{
-  color: {INK};
-  font-size: 0.85rem;
-  margin: 0 0 0.65rem 0;
-  font-family: "IBM Plex Mono", monospace;
-}}
-.fs-demo-card-spacer {{
-  flex: 1 1 auto;
-}}
-.fs-demo-copy {{
-  min-height: 7.2rem;
-  margin: 0.35rem 0 0.15rem 0;
-}}
-.fs-demo-copy .fs-demo-card-title {{
-  margin-bottom: 0.2rem;
-}}
-.fs-demo-copy .fs-demo-card-meta {{
-  margin-bottom: 0.35rem;
+  color: {TEXT};
+  font-size: 13px;
+  margin: 0;
 }}
 
-div[data-testid="stSlider"] label {{
-  font-size: 0.92rem !important;
+.fs-glossary {{
+  display: grid;
+  gap: 8px;
+  margin: 8px 0 32px 0;
+}}
+.fs-glossary-row {{
+  display: grid;
+  grid-template-columns: minmax(7rem, 11rem) 1fr;
+  gap: 16px;
+  padding: 16px;
+  background: {SURFACE};
+  border: 1px solid {CARD_BORDER};
+  border-radius: 8px;
+}}
+.fs-glossary-term {{
+  font-size: 13px;
+  font-weight: 700;
+  color: {PRIMARY};
+}}
+.fs-glossary-def {{
+  font-size: 16px;
+  color: {TEXT};
+  line-height: 1.5;
+  margin: 0;
+  max-width: 640px;
+}}
+@media (max-width: 700px) {{
+  .fs-glossary-row {{ grid-template-columns: 1fr; gap: 4px; }}
+}}
+
+.fs-chart-takeaway {{
+  font-size: 16px;
+  color: {TEXT};
+  margin: 0 0 16px 0;
+  max-width: 640px;
+  line-height: 1.5;
+  font-weight: 500;
 }}
 
 @media (max-width: 400px) {{
-  .block-container {{ padding-left: 0.7rem; padding-right: 0.7rem; }}
-  h1, .fs-title {{ font-size: 1.65rem !important; }}
-  .fs-chip-value {{ font-size: 0.95rem; }}
+  .block-container {{ padding-left: 16px; padding-right: 16px; }}
+  h1, .fs-title {{ font-size: 28px !important; }}
+  .fs-chip-value, .fs-strat-score-num {{ font-size: 22px; }}
 }}
 </style>
         """,

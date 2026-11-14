@@ -7,6 +7,8 @@ from typing import Any
 import folium
 from folium.plugins import Draw
 
+from ui.theme import PRIMARY
+
 
 def _esri_tiles() -> folium.TileLayer:
     return folium.TileLayer(
@@ -61,9 +63,9 @@ def field_map(
             polygon,
             name="Field",
             style_function=lambda _: {
-                "color": "#0B3D91",
+                "color": PRIMARY,
                 "weight": 3,
-                "fillColor": "#0B3D91",
+                "fillColor": PRIMARY,
                 "fillOpacity": 0.22,
             },
         ).add_to(m)

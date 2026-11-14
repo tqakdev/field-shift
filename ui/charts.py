@@ -1,11 +1,21 @@
-"""Plotly chart helpers — NASA mission palette."""
+"""Plotly chart helpers — Okabe–Ito colour-blind-safe palette."""
 
 from __future__ import annotations
 
 import plotly.graph_objects as go
 from fieldshift.models import FieldConditions, ScoreSet
 
-from ui.theme import EARTH, NASA_BLUE, PANEL, PAPER, SCORE_COLORS
+from ui.theme import (
+    BACKGROUND,
+    CARD_BORDER,
+    CHART_COLORS,
+    MUTED,
+    PRIMARY,
+    SCORE_COLORS,
+    SIDEBAR,
+    SURFACE,
+    TEXT,
+)
 
 MONTH_LABELS = [
     "Jan",
@@ -22,7 +32,32 @@ MONTH_LABELS = [
     "Dec",
 ]
 
-_FONT = {"family": "IBM Plex Sans, Helvetica, sans-serif", "size": 13, "color": "#0B1220"}
+_FONT = {
+    "family": "Source Sans 3, Helvetica Neue, Helvetica, Arial, sans-serif",
+    "size": 13,
+    "color": TEXT,
+}
+
+
+def conditions_takeaway(conditions: FieldConditions) -> str:
+    """One-sentence takeaway above the seasonal chart."""
+    feat = conditions.features
+    bare = feat.bare_months_label.split("(")[0].strip() if feat.bare_months_label else ""
+    rain = feat.rain_annual_mm
+    if bare and rain:
+        return (
+            f"Satellites show {bare.lower()}, with about {rain:.0f} mm of rain "
+            f"in a typical year across this field."
+        )
+    if rain:
+        return (
+            f"This field receives about {rain:.0f} mm of rain in a typical year; "
+            f"greenness peaks in the main growing season."
+        )
+    return (
+        "Plant greenness, rainfall, and water balance together show when the "
+        "field is covered, wet, or under stress."
+    )
 
 
 def conditions_figure(conditions: FieldConditions) -> go.Figure:
@@ -37,7 +72,7 @@ def conditions_figure(conditions: FieldConditions) -> go.Figure:
         fig.add_vrect(
             x0=m - 0.5,
             x1=m + 0.5,
-            fillcolor="rgba(139, 105, 20, 0.10)",
+            fillcolor="rgba(230, 159, 0, 0.12)",
             line_width=0,
             layer="below",
         )
@@ -45,7 +80,7 @@ def conditions_figure(conditions: FieldConditions) -> go.Figure:
         fig.add_vrect(
             x0=m - 0.5,
             x1=m + 0.5,
-            fillcolor="rgba(224, 60, 49, 0.08)",
+            fillcolor="rgba(213, 94, 0, 0.10)",
             line_width=0,
             layer="below",
         )
@@ -53,6 +88,9 @@ def conditions_figure(conditions: FieldConditions) -> go.Figure:
     ndvi_vals = [p.ndvi for p in profile]
     rain_vals = [p.rain_mm for p in profile]
     wb_vals = [p.water_balance_mm for p in profile]
+    green = CHART_COLORS["greenness"]
+    rain_c = CHART_COLORS["rain"]
+    wb_c = CHART_COLORS["water_balance"]
 
     fig.add_trace(
         go.Scatter(
@@ -60,11 +98,11 @@ def conditions_figure(conditions: FieldConditions) -> go.Figure:
             y=ndvi_vals,
             name="Plant greenness (0–1)",
             mode="lines+markers",
-            line={"color": EARTH, "width": 2.5},
-            marker={"size": 6, "color": EARTH},
+            line={"color": green, "width": 2.5},
+            marker={"size": 7, "symbol": "circle", "color": green},
             hovertemplate=(
                 "Plant greenness %{y:.2f}<br>"
-                "Leafiness from space (higher = greener)<extra></extra>"
+                "Source: Sentinel-2 NDVI<extra></extra>"
             ),
         )
     )
@@ -73,9 +111,13 @@ def conditions_figure(conditions: FieldConditions) -> go.Figure:
             x=xs,
             y=rain_vals,
             name="Rain (mm)",
-            marker_color="rgba(47, 111, 237, 0.40)",
+            marker_color=rain_c,
+            opacity=0.45,
             yaxis="y2",
-            hovertemplate="Rain %{y:.0f} mm that month<extra></extra>",
+            hovertemplate=(
+                "Rain %{y:.0f} mm<br>"
+                "Source: best available rainfall<extra></extra>"
+            ),
         )
     )
     fig.add_trace(
@@ -84,43 +126,54 @@ def conditions_figure(conditions: FieldConditions) -> go.Figure:
             y=wb_vals,
             name="Water balance (mm)",
             mode="lines",
-            line={"color": NASA_BLUE, "width": 2, "dash": "dash"},
+            line={"color": wb_c, "width": 2, "dash": "dash"},
             yaxis="y2",
             hovertemplate=(
                 "Water balance %{y:.0f} mm<br>"
-                "Rain minus evaporative demand (negative = short)<extra></extra>"
+                "Rain minus evaporative demand · source: field water balance"
+                "<extra></extra>"
             ),
         )
     )
 
     fig.update_layout(
-        margin={"l": 56, "r": 56, "t": 36, "b": 40},
+        margin={"l": 64, "r": 72, "t": 40, "b": 48},
         height=400,
         legend={
             "orientation": "h",
-            "y": 1.16,
+            "y": 1.14,
             "x": 0,
             "bgcolor": "rgba(0,0,0,0)",
+            "font": {"size": 13, "color": TEXT},
         },
         xaxis={
             "tickmode": "array",
             "tickvals": xs,
             "ticktext": MONTH_LABELS,
-            "title": "Month",
-            "gridcolor": PANEL,
+            "title": {"text": "Month", "font": {"size": 13, "color": MUTED}},
+            "gridcolor": "rgba(0,0,0,0)",
+            "zeroline": False,
         },
         yaxis={
-            "title": "Plant greenness (0–1)",
+            "title": {
+                "text": "Plant greenness (0–1)",
+                "font": {"size": 13, "color": MUTED},
+            },
             "range": [0, 1],
-            "gridcolor": PANEL,
+            "gridcolor": SIDEBAR,
+            "zeroline": False,
         },
         yaxis2={
-            "title": "Rain / water balance (mm)",
+            "title": {
+                "text": "Rain / water balance (mm)",
+                "font": {"size": 13, "color": MUTED},
+            },
             "overlaying": "y",
             "side": "right",
             "showgrid": False,
+            "zeroline": False,
         },
-        plot_bgcolor=PAPER,
+        plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
         font=_FONT,
         hovermode="x unified",
@@ -129,7 +182,7 @@ def conditions_figure(conditions: FieldConditions) -> go.Figure:
 
 
 def scores_bar(scores: ScoreSet, *, height: int = 175) -> go.Figure:
-    """Compact horizontal criterion score bar (6 criteria, fixed colors)."""
+    """Compact horizontal criterion score bar (6 criteria, fixed colours)."""
     items = [
         ("Water", scores.water, SCORE_COLORS["water"]),
         ("Soil", scores.soil_health, SCORE_COLORS["soil_health"]),
@@ -152,12 +205,17 @@ def scores_bar(scores: ScoreSet, *, height: int = 175) -> go.Figure:
     fig.update_layout(
         margin={"l": 58, "r": 36, "t": 6, "b": 6},
         height=height,
-        xaxis={"range": [0, 1.2], "title": None, "showticklabels": False, "gridcolor": PANEL},
+        xaxis={
+            "range": [0, 1.2],
+            "title": None,
+            "showticklabels": False,
+            "gridcolor": SIDEBAR,
+        },
         yaxis={"autorange": "reversed"},
         showlegend=False,
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
-        font={**_FONT, "size": 11},
+        font={**_FONT, "size": 12},
     )
     return fig
 
@@ -180,15 +238,15 @@ def pipeline_figure() -> go.Figure:
             x1=i * 1.35 + 1.15,
             y0=0,
             y1=1,
-            fillcolor=PANEL if i % 2 == 0 else "#F5F8FD",
-            line={"color": NASA_BLUE, "width": 1},
+            fillcolor=SURFACE if i % 2 == 0 else BACKGROUND,
+            line={"color": CARD_BORDER, "width": 1},
         )
         fig.add_annotation(
             x=i * 1.35 + 0.575,
             y=0.5,
             text=label,
             showarrow=False,
-            font={"size": 11, "color": "#0B1220", "family": "IBM Plex Sans"},
+            font={"size": 12, "color": TEXT, "family": _FONT["family"]},
         )
         if i < len(steps) - 1:
             fig.add_annotation(
@@ -196,7 +254,7 @@ def pipeline_figure() -> go.Figure:
                 y=0.5,
                 text="→",
                 showarrow=False,
-                font={"size": 16, "color": NASA_BLUE},
+                font={"size": 16, "color": PRIMARY},
             )
     fig.update_layout(
         height=110,

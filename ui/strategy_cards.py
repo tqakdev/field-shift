@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 import html
+from typing import Any
 
 import streamlit as st
 from fieldshift.models import StrategyCard
 
-from ui.components import season_pills
-from ui.explainers import format_score_line, score_band
+from ui.explainers import format_score_line
 from ui.source_caption import source_caption
-from ui.theme import SCORE_COLORS
+from ui.theme import PRIMARY, SCORE_COLORS
 
 _SCORE_KEYS = (
     "water",
@@ -21,7 +21,8 @@ _SCORE_KEYS = (
     "income",
 )
 
-_TIER_ORDER = ("best_fit", "worth_considering", "baseline", "not_suitable")
+# Baseline first so the current farm situation is always visible.
+_TIER_ORDER = ("baseline", "best_fit", "worth_considering", "not_suitable")
 _TIER_CSS = {
     "best_fit": "fs-tier-best",
     "worth_considering": "fs-tier-worth",
@@ -35,7 +36,7 @@ def _score_grid_html(card: StrategyCard) -> str:
     for key in _SCORE_KEYS:
         val = float(getattr(card.scores, key))
         row = format_score_line(key, val)
-        color = SCORE_COLORS.get(key, "#0B3D91")
+        color = SCORE_COLORS.get(key, PRIMARY)
         tip = html.escape(f"{row['orientation']} {row['detail']}")
         band_cls = row["band"].lower().replace(" ", "-")
         cells.append(
@@ -53,6 +54,34 @@ def _score_grid_html(card: StrategyCard) -> str:
             """
         )
     return '<div class="fs-sc-grid">' + "".join(cells) + "</div>"
+
+
+def _pills_html(sequence: list[Any]) -> str:
+    parts: list[str] = []
+    for i, slot in enumerate(sequence):
+        crop = getattr(slot, "crop_id", None) or (
+            slot.get("crop_id") if isinstance(slot, dict) else "?"
+        )
+        months = getattr(slot, "months", None) or (
+            slot.get("months") if isinstance(slot, dict) else ""
+        )
+        name = str(crop).replace("_", " ").title()
+        label = f"{name} {months}".strip() if months else name
+        if i:
+            parts.append('<span class="fs-pill-arrow">→</span>')
+        parts.append(f'<span class="fs-pill">{html.escape(label)}</span>')
+    return '<div class="fs-pills">' + "".join(parts) + "</div>"
+
+
+def _flags_html(card: StrategyCard) -> str:
+    lines: list[str] = []
+    for r in card.unsuitable_reasons or []:
+        lines.append(f'<div class="bad">✗ {html.escape(r)}</div>')
+    for n in card.soft_notes or []:
+        lines.append(f"<div>· {html.escape(n)}</div>")
+    # Keep a reserved band so peer cards stay level even with no flags.
+    body = "".join(lines) if lines else "&nbsp;"
+    return f'<div class="fs-strat-flags">{body}</div>'
 
 
 def render_score_legend() -> None:
@@ -103,7 +132,7 @@ def render_strategy_cards(
         tier = card.tier or "worth_considering"
         by_tier.setdefault(tier, []).append(card)
 
-    for tier in ("best_fit", "worth_considering", "baseline"):
+    for tier in ("baseline", "best_fit", "worth_considering"):
         group = by_tier.get(tier) or []
         if not group:
             continue
@@ -157,7 +186,6 @@ def _render_one_card(
     allow_expanders: bool = True,
 ) -> None:
     delta = card.delta_vs_current.get("total")
-    band, _ = score_band(card.scores.total)
     total = card.scores.total
     tier = card.tier or "worth_considering"
     tier_cls = _TIER_CSS.get(tier, "fs-tier-worth")
@@ -184,6 +212,8 @@ def _render_one_card(
     conf_icon = conf_icons.get(conf, "●●○")
 
     with st.container(border=True):
+        # One HTML block for chrome + pills + scores so paired cards share rhythm.
+        # Overall label has no Strong/Good/Fair — tiers already carry that meaning.
         st.markdown(
             f"""
 <div class="fs-strat {tier_cls}">
@@ -191,16 +221,12 @@ def _render_one_card(
   <p class="fs-strat-title">{html.escape(card.name)}</p>
   <p class="fs-tier-reason">{reason}</p>
 </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        season_pills(card.sequence)
-        st.markdown(
-            f"""
+{_pills_html(card.sequence)}
+{_flags_html(card)}
 <div class="fs-strat-summary">
   <div class="fs-strat-score">
     <span class="fs-strat-score-num">{total:.2f}</span>
-    <span class="fs-strat-score-label">overall · {html.escape(band)}</span>
+    <span class="fs-strat-score-label">Overall</span>
   </div>
   <div class="fs-strat-meta">
     {delta_html}
@@ -208,16 +234,11 @@ def _render_one_card(
   </div>
 </div>
 {climate_bit}
+{_score_grid_html(card)}
+<div class="fs-card-spacer" aria-hidden="true"></div>
             """,
             unsafe_allow_html=True,
         )
-        if card.unsuitable_reasons:
-            for r in card.unsuitable_reasons:
-                st.caption(f"✗ {r}")
-        if card.soft_notes:
-            for n in card.soft_notes:
-                st.caption(f"· {n}")
-        st.markdown(_score_grid_html(card), unsafe_allow_html=True)
 
         def _details() -> None:
             st.markdown("**Why this option**")

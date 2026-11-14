@@ -114,19 +114,16 @@ def assign_tiers(
         card.tier_label = (
             f"{TIER_ICONS['worth_considering']} {TIER_LABELS['worth_considering']}"
         )
+        top_label = top_key.replace("_", " ")
         if near_best and beats_top_criterion:
-            card.tier_reason = (
-                f"Close to the best option and stronger on {top_key.replace('_', ' ')} "
-                f"than your current rotation."
-            )
+            card.tier_reason = f"Near the best option, and stronger on {top_label}."
         elif near_best:
             card.tier_reason = (
                 f"Within {WORTH_CONSIDERING_OF_BEST:.2f} of the best suitable option."
             )
         elif beats_top_criterion:
             card.tier_reason = (
-                f"Beats your current rotation on {top_key.replace('_', ' ')} "
-                "(your highest priority)."
+                f"Stronger than today on {top_label} (your top priority)."
             )
         elif delta > 0:
             card.tier_reason = (

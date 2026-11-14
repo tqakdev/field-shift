@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import html
 from typing import Any
 
 import streamlit as st
 
-from ui.theme import EARTH, MUTED, NASA_BLUE, SCORE_COLORS
+from ui.theme import MUTED, PRIMARY, SCORE_COLORS, SIDEBAR, TEXT
 
 
 def hero(
@@ -51,29 +52,44 @@ def section(title: str, subtitle: str | None = None, *, step: int | None = None)
 
 
 def fact_chips(chips: list[dict[str, str]]) -> None:
-    """Render fact chips with value + plain-language meaning.
+    """Render equal-height fact chips with source inside each card.
 
     Each chip: label, value, optional meaning (orientation), help/source.
+    Uses one CSS grid so captions never overlap neighboring cards.
     """
-    cols = st.columns(len(chips) if chips else 1)
-    for col, chip in zip(cols, chips, strict=False):
-        with col:
-            meaning = chip.get("meaning") or ""
-            meaning_html = (
-                f'<p class="fs-chip-meaning">{meaning}</p>' if meaning else ""
-            )
-            st.markdown(
-                f"""
+    if not chips:
+        return
+    cells: list[str] = []
+    for chip in chips:
+        meaning = chip.get("meaning") or ""
+        meaning_html = (
+            f'<p class="fs-chip-meaning">{html.escape(meaning)}</p>'
+            if meaning
+            else '<p class="fs-chip-meaning">&nbsp;</p>'
+        )
+        help_txt = chip.get("help") or ""
+        source_html = (
+            f'<p class="fs-chip-source">{html.escape(help_txt)}</p>'
+            if help_txt
+            else ""
+        )
+        cells.append(
+            f"""
 <div class="fs-chip">
-  <p class="fs-chip-label">{chip.get("label", "")}</p>
-  <p class="fs-chip-value">{chip.get("value", "")}</p>
+  <p class="fs-chip-label">{html.escape(chip.get("label", ""))}</p>
+  <p class="fs-chip-value">{html.escape(chip.get("value", ""))}</p>
   {meaning_html}
+  {source_html}
 </div>
-                """,
-                unsafe_allow_html=True,
-            )
-            if chip.get("help"):
-                st.caption(chip["help"])
+            """
+        )
+    n = min(4, max(1, len(chips)))
+    st.markdown(
+        f'<div class="fs-chip-grid" style="--fs-chip-cols:{n}">'
+        + "".join(cells)
+        + "</div>",
+        unsafe_allow_html=True,
+    )
 
 
 def recommendation_banner(text: str) -> None:
@@ -132,7 +148,7 @@ def weights_bar(weights: dict[str, float]) -> None:
             x=[weights[k] for k in keys],
             y=[labels.get(k, k) for k in keys],
             orientation="h",
-            marker_color=[SCORE_COLORS.get(k, NASA_BLUE) for k in keys],
+            marker_color=[SCORE_COLORS.get(k, PRIMARY) for k in keys],
             text=[f"{weights[k]:.1f}" for k in keys],
             textposition="outside",
             cliponaxis=False,
@@ -141,12 +157,16 @@ def weights_bar(weights: dict[str, float]) -> None:
     fig.update_layout(
         height=170,
         margin={"l": 70, "r": 36, "t": 8, "b": 8},
-        xaxis={"range": [0, 2.35], "title": None, "gridcolor": "#EEF2F7"},
+        xaxis={"range": [0, 2.35], "title": None, "gridcolor": SIDEBAR},
         yaxis={"autorange": "reversed"},
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
         showlegend=False,
-        font={"family": "IBM Plex Sans, sans-serif", "size": 12, "color": "#0B1220"},
+        font={
+            "family": "Source Sans 3, Helvetica, Arial, sans-serif",
+            "size": 12,
+            "color": TEXT,
+        },
     )
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
@@ -172,8 +192,7 @@ def demo_field_cards(
                 st.image(thumb, use_container_width=True)
             else:
                 st.markdown(
-                    '<div style="aspect-ratio:5/4;background:#EEF2F7;'
-                    'border:1px solid #D5DCE6;"></div>',
+                    '<div class="fs-demo-thumb-empty"></div>',
                     unsafe_allow_html=True,
                 )
 
@@ -226,10 +245,10 @@ def demo_field_card(**kwargs: Any) -> bool:
 
 
 __all__ = [
-    "EARTH",
     "MUTED",
-    "NASA_BLUE",
+    "PRIMARY",
     "SCORE_COLORS",
+    "TEXT",
     "confidence_badge",
     "demo_field_card",
     "demo_field_cards",
