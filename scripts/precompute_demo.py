@@ -153,6 +153,8 @@ def precompute_one(
                 field_id=f"demo_{field_id}",
                 out_name=f"demo_{field_id}_ndvi.gif",
                 tidy=tidy,
+                force=True,
+                dimensions=512,
             )
             print("  RGB GIF …")
             rgb_gif = download_s2_gif(
@@ -163,6 +165,8 @@ def precompute_one(
                 field_id=f"demo_{field_id}",
                 out_name=f"demo_{field_id}_rgb.gif",
                 tidy=tidy,
+                force=True,
+                dimensions=512,
             )
         except Exception as exc:  # noqa: BLE001
             print(f"  GIF download failed: {exc}")
